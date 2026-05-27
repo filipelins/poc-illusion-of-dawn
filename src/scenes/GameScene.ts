@@ -2,9 +2,9 @@ import Phaser from 'phaser';
 import {
   TILE_SIZE, MAP_COLS, MAP_ROWS, MAP_DATA,
   WORLD_W, WORLD_H, CONTACT_RADIUS, PROJ_SPEED, SOLID_TILES,
-  BOSS_CONTACT_DIST
+  BOSS_CONTACT_DIST, CASTLE_DOOR_WX, CASTLE_DOOR_WY
 } from '../constants';
-import { worldDist, isWall } from '../utils/iso';
+import { worldDist, isWall, setCurrentMap } from '../utils/iso';
 import { Player }  from '../entities/Player';
 import { Bard }    from '../entities/Bard';
 import { Cleric }       from '../entities/Cleric';
@@ -14,6 +14,7 @@ import { Slime }   from '../entities/Slime';
 import { Skeleton } from '../entities/Skeleton';
 import { Wizard }  from '../entities/Wizard';
 import type { BaseEnemy } from '../entities/BaseEnemy';
+import { WeatherSystem } from '../systems/WeatherSystem';
 
 const PLAYER_MAX_HP = 10;
 
@@ -24,10 +25,14 @@ export class GameScene extends Phaser.Scene {
   private boss: MindDevourer | null = null;
   private bossSpawned = false;
 
+  private weather!: WeatherSystem;
+
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private attackKey!: Phaser.Input.Keyboard.Key;
   private defendKey!: Phaser.Input.Keyboard.Key;
   private specialKey!: Phaser.Input.Keyboard.Key;
+  private interactKey!: Phaser.Input.Keyboard.Key;
+  private doorPrompt!: Phaser.GameObjects.Text;
 
   constructor() { super({ key: 'GameScene' }); }
 
@@ -37,17 +42,38 @@ export class GameScene extends Phaser.Scene {
     this.boss = null;
     this.bossSpawned = false;
 
+    setCurrentMap(MAP_DATA, MAP_COLS, MAP_ROWS);
     this.buildTileMap();
     this.spawnPlayer();
     this.spawnEnemies();
     this.setupCamera();
     this.setupInput();
 
+    this.doorPrompt = this.add.text(0, 0, '[ E ]  Entrar no Castelo', {
+      fontSize: '11px', color: '#ffeeaa',
+      fontFamily: 'monospace', stroke: '#221100', strokeThickness: 3
+    }).setScrollFactor(0).setDepth(200).setVisible(false);
+    this.doorPrompt.setPosition(500 - this.doorPrompt.width / 2, 720);
+
+    const returnFromCastle = this.registry.get('returnFromCastle') as boolean;
+    if (returnFromCastle) {
+      this.registry.set('returnFromCastle', false);
+      const savedHp = this.registry.get('savedHP') as number;
+      if (savedHp !== undefined) {
+        this.player.hp = savedHp;
+        this.registry.set('playerHP', savedHp);
+      }
+      this.player.worldX = CASTLE_DOOR_WX;
+      this.player.worldY = CASTLE_DOOR_WY + 2;
+    }
+
+    this.weather = new WeatherSystem(this);
+
     if (!this.scene.isActive('UIScene')) this.scene.launch('UIScene');
 
-    const hp = this.player.maxHp;
+    const hp = this.player.hp;
     this.registry.set('playerHP', hp);
-    this.registry.set('playerMaxHP', hp);
+    this.registry.set('playerMaxHP', this.player.maxHp);
     this.registry.set('playerDefending', false);
     this.registry.set('playerAttacking', false);
     this.registry.set('specialReady', false);
@@ -56,6 +82,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   update(_t: number, delta: number): void {
+    this.weather.update(delta);
     this.player.update(this.cursors, this.attackKey, this.defendKey, this.specialKey, delta);
 
     for (let i = this.enemies.length - 1; i >= 0; i--) {
@@ -157,11 +184,19 @@ export class GameScene extends Phaser.Scene {
         }
       }
     }
+
+    // Castle door interaction
+    const nearGate = worldDist(this.player.worldX, this.player.worldY, CASTLE_DOOR_WX, CASTLE_DOOR_WY) < 2.0;
+    this.doorPrompt.setVisible(nearGate);
+    if (nearGate && Phaser.Input.Keyboard.JustDown(this.interactKey)) {
+      this.enterCastle();
+    }
   }
 
   // ── TILE MAP ─────────────────────────────────────────────────────────
 
   private floorTex(type: number, row: number, col: number): string {
+    if (type === 12 || type === 13) return 'tile-dungeon';
     if (type === 3) return 'tile-path';
     if (type === 6 || type === 10) return 'tile-sand';
     if (type === 7 || type === 11) return 'tile-dungeon';
@@ -187,6 +222,8 @@ export class GameScene extends Phaser.Scene {
         else if (type === 10)               topTex = 'tile-cactus';
         else if (type === 4)                topTex = 'tile-water';
         else if (type === 5)                topTex = 'tile-house-wall';
+        else if (type === 12)               topTex = 'tile-castle-wall';
+        else if (type === 13)               topTex = 'tile-castle-door';
 
         if (topTex) this.add.image(x, y, topTex).setOrigin(0, 0).setDepth(row + 0.1);
       }
@@ -329,6 +366,12 @@ export class GameScene extends Phaser.Scene {
     this.player.takeDamage(enemy.damage, dirX, dirY);
   }
 
+  private enterCastle(): void {
+    this.registry.set('savedHP', this.player.hp);
+    this.cameras.main.fade(400, 0, 0, 0);
+    this.time.delayedCall(420, () => this.scene.start('CastleScene'));
+  }
+
   private showBlocked(sx: number, sy: number): void {
     const txt = this.add.text(sx, sy - 20, 'BLOCKED!', {
       fontSize: '12px', color: '#44ddff',
@@ -377,5 +420,7 @@ export class GameScene extends Phaser.Scene {
 
     kb.on('keydown-SHIFT', () => { (this.defendKey as unknown as Record<string, boolean>)['isDown'] = true; });
     kb.on('keyup-SHIFT',   () => { (this.defendKey as unknown as Record<string, boolean>)['isDown'] = false; });
+
+    this.interactKey = kb.addKey(Phaser.Input.Keyboard.KeyCodes.E);
   }
 }

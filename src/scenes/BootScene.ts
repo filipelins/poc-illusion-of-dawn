@@ -29,6 +29,10 @@ export class BootScene extends Phaser.Scene {
     this.makeSwords();
     this.makeHearts();
     this.makeBlank();
+    this.makeRainDrop();
+    this.makeSnowFlake();
+    this.makeCastleWall();
+    this.makeCastleDoor();
     this.scene.start('CharacterSelectScene');
   }
 
@@ -971,6 +975,78 @@ export class BootScene extends Phaser.Scene {
     const gr = this.g();
     gr.fillStyle(0xffffff, 1); gr.fillRect(0, 0, 4, 4);
     gr.generateTexture('blank', 4, 4);
+    gr.destroy();
+  }
+
+  // ── Rain drop 2×8 ────────────────────────────────────────────────────
+
+  private makeRainDrop(): void {
+    const gr = this.g();
+    gr.fillStyle(0xffffff, 1);
+    gr.fillRect(0, 0, 2, 8);
+    gr.generateTexture('rain-drop', 2, 8);
+    gr.destroy();
+  }
+
+  // ── Snow flake 3×3 (cross shape) ──────────────────────────────────────
+
+  private makeSnowFlake(): void {
+    const gr = this.g();
+    gr.fillStyle(0xffffff, 1);
+    gr.fillRect(1, 0, 1, 3);
+    gr.fillRect(0, 1, 3, 1);
+    gr.generateTexture('snow-flake', 3, 3);
+    gr.destroy();
+  }
+
+  // ── Castle wall 32×40 (dark stone with crenellations) ────────────────
+
+  private makeCastleWall(): void {
+    const gr = this.g();
+    // Top face — very dark grey stone
+    gr.fillStyle(0x3a3848); gr.fillRect(0, 0, 32, 32);
+    // Mortar seams horizontal
+    gr.fillStyle(0x262434);
+    gr.fillRect(0, 10, 32, 2); gr.fillRect(0, 22, 32, 2);
+    // Mortar seams vertical
+    gr.fillRect(8, 0, 2, 10); gr.fillRect(20, 0, 2, 10);
+    gr.fillRect(14, 12, 2, 10); gr.fillRect(2, 12, 2, 10);
+    gr.fillRect(6, 24, 2, 8);  gr.fillRect(22, 24, 2, 8);
+    // Block face highlights
+    gr.fillStyle(0x4a4858);
+    gr.fillRect(1, 1, 6, 2); gr.fillRect(11, 1, 8, 2); gr.fillRect(23, 1, 5, 2);
+    gr.fillRect(4, 12, 8, 2); gr.fillRect(17, 12, 9, 2);
+    // Crenellations (merlons) at top
+    gr.fillStyle(0x282636); gr.fillRect(0, 0, 7, 5); gr.fillRect(11, 0, 8, 5); gr.fillRect(24, 0, 8, 5);
+    gr.fillStyle(0x4a4858); gr.fillRect(7, 0, 4, 6); gr.fillRect(19, 0, 5, 6);
+    // South face
+    gr.fillStyle(0x18162a); gr.fillRect(0, 32, 32, 8);
+    gr.fillStyle(0x222038); gr.fillRect(0, 32, 32, 2);
+    gr.fillStyle(0x10101e);
+    gr.fillRect(8, 33, 2, 7); gr.fillRect(20, 33, 2, 7);
+    gr.generateTexture('tile-castle-wall', 32, 40);
+    gr.destroy();
+  }
+
+  // ── Castle door floor 32×32 (shadowed threshold) ─────────────────────
+
+  private makeCastleDoor(): void {
+    const gr = this.g();
+    // Dark stone floor
+    gr.fillStyle(0x2c2838); gr.fillRect(0, 0, 32, 32);
+    // Center worn-path strip
+    gr.fillStyle(0x3a3448);
+    gr.fillRect(9, 0, 14, 32);
+    // Shadow edges from arch overhead
+    gr.fillStyle(0x16121e, 0.8);
+    gr.fillRect(0, 0, 32, 5); gr.fillRect(0, 27, 32, 5);
+    // Portcullis bar shadows (subtle)
+    gr.fillStyle(0x100e1a, 0.6);
+    gr.fillRect(11, 0, 3, 32); gr.fillRect(18, 0, 3, 32);
+    gr.fillRect(0, 9, 32, 2); gr.fillRect(0, 18, 32, 2);
+    // Iron ring bolt
+    gr.fillStyle(0x605868); gr.fillRect(14, 15, 4, 2);
+    gr.generateTexture('tile-castle-door', 32, 32);
     gr.destroy();
   }
 }

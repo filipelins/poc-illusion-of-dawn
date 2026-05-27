@@ -4,7 +4,7 @@ export const TILE_SIZE = 32;
 // ── Tile types ─────────────────────────────────────────────────────
 // Walkable: 0=grass  3=path  6=sand  7=dungeon  8=forest
 // Solid:    1=wall   2=bush  4=water 5=house-wall 9=forest-tree 10=cactus 11=ruin-wall
-export const SOLID_TILES = new Set<number>([1, 2, 4, 5, 9, 10, 11]);
+export const SOLID_TILES = new Set<number>([1, 2, 4, 5, 9, 10, 11, 12]);
 
 // ── Map ────────────────────────────────────────────────────────────
 export const MAP_COLS = 64;
@@ -133,6 +133,29 @@ function generateMap(): number[][] {
   F(22, 53, R - 2, 54, 3);
   F(11, 19, 12, 44, 3);
 
+  // ── Castle (rows 26-38, cols 22-34) ────────────────────────────────
+  // Interior courtyard floor
+  F(27, 23, 37, 33, 7);
+  // Outer walls
+  F(26, 22, 26, 34, 12); // north wall
+  F(38, 22, 38, 34, 12); // south wall
+  F(26, 22, 38, 22, 12); // west wall
+  F(26, 34, 38, 34, 12); // east wall
+  // North gate entrance (walkable, triggers transition)
+  S(26, 27, 13); S(26, 28, 13);
+  // Corner towers
+  F(26, 22, 27, 23, 12); F(26, 33, 27, 34, 12);
+  F(37, 22, 38, 23, 12); F(37, 33, 38, 34, 12);
+  // Inner keep outer walls
+  F(29, 25, 29, 31, 12); // keep north
+  F(35, 25, 35, 31, 12); // keep south
+  F(29, 25, 35, 25, 12); // keep west
+  F(29, 31, 35, 31, 12); // keep east
+  // Keep gate (south face of inner keep)
+  S(35, 28, 7); S(35, 29, 7);
+  // Path from main road to castle gate
+  F(24, 27, 25, 28, 3);
+
   return m;
 }
 
@@ -140,6 +163,10 @@ export const MAP_DATA: number[][] = generateMap();
 
 export const WORLD_W = MAP_COLS * TILE_SIZE;  // 2048
 export const WORLD_H = MAP_ROWS * TILE_SIZE;  // 1536
+
+// ── Castle overworld gate position ─────────────────────────────────────
+export const CASTLE_DOOR_WX = 27.5;
+export const CASTLE_DOOR_WY = 26.0;
 
 // ── Player ─────────────────────────────────────────────────────────
 export const PLAYER_SPEED         = 4.5;
