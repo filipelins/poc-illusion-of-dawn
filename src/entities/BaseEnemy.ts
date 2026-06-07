@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { isoX, isoY, isoDepth, moveSlide, worldDist } from '../utils/iso';
 import { TILE_SIZE, ENEMY_KNOCKBACK, ENEMY_KNOCKBACK_DUR } from '../constants';
 import type { BasePlayer as Player } from './BasePlayer';
+import { getAudio } from '../systems/AudioSystem';
 
 export abstract class BaseEnemy {
   worldX: number;
@@ -89,7 +90,12 @@ export abstract class BaseEnemy {
     this.knockTimer = ENEMY_KNOCKBACK_DUR;
     this.sprite.setTint(0xff4444);
     this.flashTimer = 140;
-    if (this.hp <= 0) this.die();
+    if (this.hp <= 0) {
+      getAudio(this.scene)?.playEffect('enemyDie');
+      this.die();
+    } else {
+      getAudio(this.scene)?.playEffect('hit');
+    }
   }
 
   isAlive(): boolean { return this.hp > 0 && this.sprite.active; }

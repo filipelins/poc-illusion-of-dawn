@@ -15,6 +15,7 @@ export class UIScene extends Phaser.Scene {
   private bossPhaseTxt!: Phaser.GameObjects.Text;
   private bossVignette!: Phaser.GameObjects.Rectangle;
   private bossAnnounce!: Phaser.GameObjects.Text;
+  private bossBarLeft = 0;
 
   constructor() { super({ key: 'UIScene' }); }
 
@@ -64,11 +65,11 @@ export class UIScene extends Phaser.Scene {
     });
 
     // Cleric realm overlay (full-screen purple tint, depth below UI)
-    this.realmOverlay = this.add.rectangle(500, 400, 1000, 800, 0x6600cc)
+    this.realmOverlay = this.add.rectangle(this.scale.width / 2, this.scale.height / 2, this.scale.width, this.scale.height, 0x6600cc)
       .setScrollFactor(0).setDepth(94).setAlpha(0);
 
     // Realm active label (center screen)
-    this.realmActiveText = this.add.text(500, 380, '✦ DIVINE REALM ✦', {
+    this.realmActiveText = this.add.text(this.scale.width / 2, this.scale.height / 2 - 20, '✦ DIVINE REALM ✦', {
       fontSize: '22px', color: '#ccddff',
       fontFamily: 'monospace', stroke: '#220066', strokeThickness: 5
     }).setOrigin(0.5).setScrollFactor(0).setDepth(101).setVisible(false);
@@ -79,32 +80,34 @@ export class UIScene extends Phaser.Scene {
     });
 
     // Controls
-    this.controlsText = this.add.text(4, 580, 'MOVE: WASD/Arrows  |  ATTACK: Z/Space  |  DEFEND: X/Shift', {
+    this.controlsText = this.add.text(4, this.scale.height - 18, 'MOVE: WASD/Arrows  |  ATTACK: Z/Space  |  DEFEND: X/Shift', {
       fontSize: '10px', color: '#888888',
       fontFamily: 'monospace'
     }).setScrollFactor(0).setDepth(100);
 
     // Enemy legend
-    this.add.text(680, 8, 'Slime  Skel  Wizard', {
+    this.add.text(this.scale.width - 120, 8, 'Slime  Skel  Wizard', {
       fontSize: '9px', color: '#aaaaaa', fontFamily: 'monospace'
     }).setScrollFactor(0).setDepth(100);
 
     // ── Boss health bar (hidden by default) ──────────────────────────
-    this.bossVignette = this.add.rectangle(500, 400, 1000, 800, 0x06000e)
+    this.bossVignette = this.add.rectangle(this.scale.width / 2, this.scale.height / 2, this.scale.width, this.scale.height, 0x06000e)
       .setScrollFactor(0).setDepth(93).setAlpha(0);
 
-    this.bossNameTxt = this.add.text(500, 4, 'DEVORADOR DE MENTES', {
+    this.bossNameTxt = this.add.text(this.scale.width / 2, 4, 'DEVORADOR DE MENTES', {
       fontSize: '11px', color: '#dd66ff',
       fontFamily: 'monospace', stroke: '#1a0033', strokeThickness: 3
     }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(100).setVisible(false);
 
     this.bossBar = this.add.graphics().setScrollFactor(0).setDepth(100);
 
-    this.bossPhaseTxt = this.add.text(708, 16, 'FASE I', {
+    const bossBarW = 400;
+    this.bossBarLeft = Math.floor((this.scale.width - bossBarW) / 2);
+    this.bossPhaseTxt = this.add.text(this.bossBarLeft + bossBarW + 8, 16, 'FASE I', {
       fontSize: '9px', color: '#cc44ff', fontFamily: 'monospace'
     }).setScrollFactor(0).setDepth(100).setVisible(false).setOrigin(0, 0.5);
 
-    this.bossAnnounce = this.add.text(500, 360, '◈ O DEVORADOR DE MENTES DESPERTA ◈', {
+    this.bossAnnounce = this.add.text(this.scale.width / 2, this.scale.height / 2 - 40, '◈ O DEVORADOR DE MENTES DESPERTA ◈', {
       fontSize: '16px', color: '#ff44ff',
       fontFamily: 'monospace', stroke: '#1a0033', strokeThickness: 5
     }).setOrigin(0.5).setScrollFactor(0).setDepth(102).setAlpha(0).setVisible(false);
@@ -227,7 +230,7 @@ export class UIScene extends Phaser.Scene {
   }
 
   private drawBossBar(hp: number, maxHp: number): void {
-    const bx = 300, by = 18, bw = 400, bh = 13;
+    const bx = this.bossBarLeft, by = 18, bw = 400, bh = 13;
     const frac = Math.max(0, hp / maxHp);
     const fillColor = frac > 0.5 ? 0xcc44ff : frac > 0.25 ? 0xff2288 : 0xff0000;
 

@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { isoX, isoY, isoDepth } from '../utils/iso';
+import { getAudio } from '../systems/AudioSystem';
 import {
   TILE_SIZE,
   BARD_MAX_HP, BARD_SPEED, BARD_DEFEND_SPEED,
@@ -54,7 +55,8 @@ export class Bard extends BasePlayer {
   protected onSpecialInput(key: Phaser.Input.Keyboard.Key, delta: number): void {
     if (this.specialCooldown > 0) this.specialCooldown -= delta;
 
-    if (Phaser.Input.Keyboard.JustDown(key) && this.specialCooldown <= 0) {
+    if (this.isSpecialJustPressed(key) && this.specialCooldown <= 0) {
+      getAudio(this.scene)?.playEffect('special');
       this.fireNotes();
     }
 

@@ -7,11 +7,17 @@ import { CastleScene } from './scenes/CastleScene';
 
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
-  width: 1000,
-  height: 800,
   parent: 'game-container',
   backgroundColor: '#000000',
   pixelArt: true,
+  scale: {
+    mode: Phaser.Scale.EXPAND,
+    width: 1000,
+    height: 800,
+  },
+  input: {
+    gamepad: true,
+  },
   physics: {
     default: 'arcade',
     arcade: { debug: false, gravity: { x: 0, y: 0 } }

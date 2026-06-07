@@ -5,6 +5,7 @@ import { Player }  from '../entities/Player';
 import { Bard }    from '../entities/Bard';
 import { Cleric }  from '../entities/Cleric';
 import type { BasePlayer } from '../entities/BasePlayer';
+import { getAudio } from '../systems/AudioSystem';
 
 // ── Interior map (24 cols × 18 rows) ──────────────────────────────────────
 // Tile types: 1=wall  7=dungeon-floor  13=exit-door
@@ -55,6 +56,7 @@ export class CastleScene extends Phaser.Scene {
 
   create(): void {
     setCurrentMap(INTERIOR_MAP, INTERIOR_COLS, INTERIOR_ROWS);
+    getAudio(this)?.playMusic('castle');
 
     // Ambient background
     const bg = this.add.graphics();

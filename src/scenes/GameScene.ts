@@ -5,6 +5,7 @@ import {
   BOSS_CONTACT_DIST, CASTLE_DOOR_WX, CASTLE_DOOR_WY
 } from '../constants';
 import { worldDist, isWall, setCurrentMap } from '../utils/iso';
+import { getAudio } from '../systems/AudioSystem';
 import { Player }  from '../entities/Player';
 import { Bard }    from '../entities/Bard';
 import { Cleric }       from '../entities/Cleric';
@@ -33,6 +34,7 @@ export class GameScene extends Phaser.Scene {
   private specialKey!: Phaser.Input.Keyboard.Key;
   private interactKey!: Phaser.Input.Keyboard.Key;
   private doorPrompt!: Phaser.GameObjects.Text;
+  private padInteractPrev = false;
 
   constructor() { super({ key: 'GameScene' }); }
 
@@ -53,7 +55,7 @@ export class GameScene extends Phaser.Scene {
       fontSize: '11px', color: '#ffeeaa',
       fontFamily: 'monospace', stroke: '#221100', strokeThickness: 3
     }).setScrollFactor(0).setDepth(200).setVisible(false);
-    this.doorPrompt.setPosition(500 - this.doorPrompt.width / 2, 720);
+    this.doorPrompt.setPosition(this.scale.width / 2 - this.doorPrompt.width / 2, this.scale.height - 80);
 
     const returnFromCastle = this.registry.get('returnFromCastle') as boolean;
     if (returnFromCastle) {
@@ -79,6 +81,7 @@ export class GameScene extends Phaser.Scene {
     this.registry.set('specialReady', false);
     this.registry.set('specialFrac', 0);
     this.registry.set('selectedChar', this.registry.get('selectedChar') ?? 'knight');
+    getAudio(this)?.playMusic('overworld');
   }
 
   update(_t: number, delta: number): void {
@@ -102,7 +105,11 @@ export class GameScene extends Phaser.Scene {
 
     // Boss update & combat
     if (this.boss) {
-      if (!this.boss.active) { this.boss = null; }
+      if (!this.boss.active) {
+        getAudio(this)?.playEffect('victory');
+        getAudio(this)?.playMusic('overworld');
+        this.boss = null;
+      }
       else {
         this.boss.update(this.player, delta);
         this.checkWeaponHit(this.boss);
@@ -188,7 +195,12 @@ export class GameScene extends Phaser.Scene {
     // Castle door interaction
     const nearGate = worldDist(this.player.worldX, this.player.worldY, CASTLE_DOOR_WX, CASTLE_DOOR_WY) < 2.0;
     this.doorPrompt.setVisible(nearGate);
-    if (nearGate && Phaser.Input.Keyboard.JustDown(this.interactKey)) {
+    const pad = (this.input.gamepad as Phaser.Input.Gamepad.GamepadPlugin)?.getPad(0);
+    // B / Circle (button 1) to interact — manual justPressed tracking
+    const bDown = pad?.buttons[1]?.pressed === true;
+    const padInteract = bDown && !this.padInteractPrev;
+    this.padInteractPrev = bDown;
+    if (nearGate && (Phaser.Input.Keyboard.JustDown(this.interactKey) || padInteract)) {
       this.enterCastle();
     }
   }
@@ -301,11 +313,13 @@ export class GameScene extends Phaser.Scene {
   }
 
   private announceBoss(): void {
+    getAudio(this)?.playEffect('bossRoar');
     this.registry.set('bossAnnouncing', true);
     this.time.delayedCall(3800, () => this.registry.set('bossAnnouncing', false));
   }
 
   private spawnBoss(): void {
+    getAudio(this)?.playMusic('boss');
     let bx = 30.5, by = 24.5;
     for (let attempt = 0; attempt < 14; attempt++) {
       const a = Math.random() * Math.PI * 2;
@@ -367,12 +381,14 @@ export class GameScene extends Phaser.Scene {
   }
 
   private enterCastle(): void {
+    getAudio(this)?.playEffect('interact');
     this.registry.set('savedHP', this.player.hp);
     this.cameras.main.fade(400, 0, 0, 0);
     this.time.delayedCall(420, () => this.scene.start('CastleScene'));
   }
 
   private showBlocked(sx: number, sy: number): void {
+    getAudio(this)?.playEffect('blocked');
     const txt = this.add.text(sx, sy - 20, 'BLOCKED!', {
       fontSize: '12px', color: '#44ddff',
       fontFamily: 'monospace', stroke: '#001133', strokeThickness: 3

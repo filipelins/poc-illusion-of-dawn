@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { isoX, isoY, isoDepth } from '../utils/iso';
+import { getAudio } from '../systems/AudioSystem';
 import {
   TILE_SIZE,
   CLERIC_MAX_HP, CLERIC_SPEED, CLERIC_DEFEND_SPEED,
@@ -82,7 +83,8 @@ export class Cleric extends BasePlayer {
       if (!this.bolts[i].active) this.bolts.splice(i, 1);
     }
 
-    if (Phaser.Input.Keyboard.JustDown(key) && this.specialCooldown <= 0 && !this.realmActive) {
+    if (this.isSpecialJustPressed(key) && this.specialCooldown <= 0 && !this.realmActive) {
+      getAudio(this.scene)?.playEffect('special');
       this.activateRealm();
     }
 

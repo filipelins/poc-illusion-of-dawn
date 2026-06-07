@@ -83,16 +83,18 @@ export class WeatherSystem {
 
   private buildRain(fade: boolean): void {
     const target = 0.32;
+    const sw = this.scene.scale.width, sh = this.scene.scale.height;
     this.overlay = this.scene.add
-      .rectangle(500, 400, 1000, 800, 0x0a1a2e, fade ? 0 : target)
+      .rectangle(sw / 2, sh / 2, sw, sh, 0x0a1a2e, fade ? 0 : target)
       .setScrollFactor(0)
       .setDepth(490);
     if (fade) {
       this.scene.tweens.add({ targets: this.overlay, alpha: target, duration: FADE_DUR });
     }
 
-    this.emitter = this.scene.add.particles(500, 0, 'rain-drop', {
-      x: { min: -600, max: 600 },
+    const half = Math.ceil(sw / 2) + 50;
+    this.emitter = this.scene.add.particles(sw / 2, 0, 'rain-drop', {
+      x: { min: -half, max: half },
       y: { min: -30, max: -5 },
       speedX: { min: 10, max: 50 },
       speedY: { min: 500, max: 720 },
@@ -108,16 +110,18 @@ export class WeatherSystem {
 
   private buildSnow(fade: boolean): void {
     const target = 0.13;
+    const sw = this.scene.scale.width, sh = this.scene.scale.height;
     this.overlay = this.scene.add
-      .rectangle(500, 400, 1000, 800, 0xb0c8ee, fade ? 0 : target)
+      .rectangle(sw / 2, sh / 2, sw, sh, 0xb0c8ee, fade ? 0 : target)
       .setScrollFactor(0)
       .setDepth(490);
     if (fade) {
       this.scene.tweens.add({ targets: this.overlay, alpha: target, duration: FADE_DUR });
     }
 
-    this.emitter = this.scene.add.particles(500, 0, 'snow-flake', {
-      x: { min: -600, max: 600 },
+    const half = Math.ceil(sw / 2) + 50;
+    this.emitter = this.scene.add.particles(sw / 2, 0, 'snow-flake', {
+      x: { min: -half, max: half },
       y: { min: -10, max: 0 },
       speedX: { min: -45, max: 45 },
       speedY: { min: 50, max: 110 },

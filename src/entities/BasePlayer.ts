@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { isoX, isoY, isoDepth, moveSlide } from '../utils/iso';
 import { TILE_SIZE, PLAYER_INVINCIBILITY, PLAYER_KNOCKBACK, PLAYER_RADIUS } from '../constants';
+import { getAudio } from '../systems/AudioSystem';
 
 export type TopDir = 'down' | 'up' | 'left' | 'right';
 
@@ -34,6 +35,7 @@ export abstract class BasePlayer {
   private knockTimer = 0;
 
   readonly hitEnemies = new Set<object>();
+  private padPrev: boolean[] = [];
   protected sprite!: Phaser.GameObjects.Sprite;
   protected scene: Phaser.Scene;
 
@@ -86,15 +88,38 @@ export abstract class BasePlayer {
     specialKey: Phaser.Input.Keyboard.Key,
     delta: number
   ): void {
+    const pad = this.readPad();
     this.tickTimers(delta);
-    this.handleDefend(defendKey);
-    this.handleAttackInput(attackKey);
+    this.handleDefend(defendKey, pad);
+    this.handleAttackInput(attackKey, pad);
     this.onSpecialInput(specialKey, delta);
-    this.handleMovement(cursors, delta);
+    this.handleMovement(cursors, delta, pad);
     this.updateWeapon();
     this.updateFlash(delta);
     this.syncSprite();
     this.publishRegistry();
+    // Snapshot button states for justPressed detection next frame
+    if (pad) this.padPrev = pad.buttons.map(b => b?.pressed ?? false);
+    else this.padPrev = [];
+  }
+
+  private readPad(): Phaser.Input.Gamepad.Gamepad | null {
+    return (this.scene.input.gamepad as Phaser.Input.Gamepad.GamepadPlugin)?.getPad(0) ?? null;
+  }
+
+  private padIsDown(pad: Phaser.Input.Gamepad.Gamepad, index: number): boolean {
+    return pad.buttons[index]?.pressed === true;
+  }
+
+  private padJustPressed(pad: Phaser.Input.Gamepad.Gamepad, index: number): boolean {
+    return pad.buttons[index]?.pressed === true && !(this.padPrev[index] ?? false);
+  }
+
+  protected isSpecialJustPressed(key: Phaser.Input.Keyboard.Key): boolean {
+    if (Phaser.Input.Keyboard.JustDown(key)) return true;
+    const pad = this.readPad();
+    // Y (Xbox) / Triangle (DualShock) = button 3
+    return pad ? this.padJustPressed(pad, 3) : false;
   }
 
   // ── Shared: timers ─────────────────────────────────────────────────
@@ -115,14 +140,18 @@ export abstract class BasePlayer {
 
   // ── Shared: defend ─────────────────────────────────────────────────
 
-  private handleDefend(key: Phaser.Input.Keyboard.Key): void {
-    if (!this._attacking) this._defending = key.isDown;
+  private handleDefend(key: Phaser.Input.Keyboard.Key, pad: Phaser.Input.Gamepad.Gamepad | null): void {
+    // X / Square (button 2) or LB / L1 (button 4)
+    const padDefend = pad ? (this.padIsDown(pad, 2) || this.padIsDown(pad, 4)) : false;
+    if (!this._attacking) this._defending = key.isDown || padDefend;
   }
 
   // ── Shared: attack input ───────────────────────────────────────────
 
-  protected handleAttackInput(key: Phaser.Input.Keyboard.Key): void {
-    if (Phaser.Input.Keyboard.JustDown(key) && this.attackCooldown <= 0 && !this._attacking) {
+  protected handleAttackInput(key: Phaser.Input.Keyboard.Key, pad: Phaser.Input.Gamepad.Gamepad | null): void {
+    // A / Cross (button 0) or RB / R1 (button 5)
+    const padJust = pad ? (this.padJustPressed(pad, 0) || this.padJustPressed(pad, 5)) : false;
+    if ((Phaser.Input.Keyboard.JustDown(key) || padJust) && this.attackCooldown <= 0 && !this._attacking) {
       this.beginAttack();
     }
   }
@@ -134,24 +163,42 @@ export abstract class BasePlayer {
     this.attackCooldown = this.getAttackCooldown();
     this.hitEnemies.clear();
     this.scene.cameras.main.shake(55, 0.004);
+    getAudio(this.scene)?.playEffect('swing');
   }
 
   // ── Shared: movement ───────────────────────────────────────────────
 
-  private handleMovement(cursors: Phaser.Types.Input.Keyboard.CursorKeys, delta: number): void {
+  private handleMovement(cursors: Phaser.Types.Input.Keyboard.CursorKeys, delta: number, pad: Phaser.Input.Gamepad.Gamepad | null): void {
     const dt = delta / 1000;
     const ck = cursors as unknown as Record<string, Phaser.Input.Keyboard.Key>;
 
-    const up    = cursors.up.isDown    || ck['W']?.isDown;
-    const down  = cursors.down.isDown  || ck['S']?.isDown;
-    const left  = cursors.left.isDown  || ck['A']?.isDown;
-    const right = cursors.right.isDown || ck['D']?.isDown;
+    // Analog stick (leftStick is deadzone-corrected by Phaser)
+    const stickX = pad?.leftStick?.x ?? 0;
+    const stickY = pad?.leftStick?.y ?? 0;
+    // D-pad: up=12 down=13 left=14 right=15
+    const dUp    = pad ? this.padIsDown(pad, 12) : false;
+    const dDown  = pad ? this.padIsDown(pad, 13) : false;
+    const dLeft  = pad ? this.padIsDown(pad, 14) : false;
+    const dRight = pad ? this.padIsDown(pad, 15) : false;
 
-    let dx = 0, dy = 0;
-    if (up)    dy -= 1;
-    if (down)  dy += 1;
-    if (left)  dx -= 1;
-    if (right) dx += 1;
+    const up    = cursors.up.isDown    || ck['W']?.isDown || stickY < -0.1 || dUp;
+    const down  = cursors.down.isDown  || ck['S']?.isDown || stickY >  0.1 || dDown;
+    const left  = cursors.left.isDown  || ck['A']?.isDown || stickX < -0.1 || dLeft;
+    const right = cursors.right.isDown || ck['D']?.isDown || stickX >  0.1 || dRight;
+
+    // Prefer analog stick for smooth movement; fall back to digital input
+    let dx = stickX !== 0 ? stickX : 0;
+    let dy = stickY !== 0 ? stickY : 0;
+    if (dx === 0 && dy === 0) {
+      if (up)    dy -= 1;
+      if (down)  dy += 1;
+      if (left)  dx -= 1;
+      if (right) dx += 1;
+    }
+
+    // Clamp analog magnitude to 1
+    const mag = Math.sqrt(dx * dx + dy * dy);
+    if (mag > 1) { dx /= mag; dy /= mag; }
 
     if (!this._attacking && (dx !== 0 || dy !== 0)) {
       if (Math.abs(dy) >= Math.abs(dx)) {
@@ -161,7 +208,8 @@ export abstract class BasePlayer {
       }
     }
 
-    if (dx !== 0 && dy !== 0) { dx *= 0.707; dy *= 0.707; }
+    // Normalize digital diagonal (analog is already normalized via clamp above)
+    if (dx !== 0 && dy !== 0 && stickX === 0 && stickY === 0) { dx *= 0.707; dy *= 0.707; }
 
     const spd = this._defending ? this.getDefendSpeed() : this.getMaxSpeed();
     const moveDx = (dx * spd + (this.knockTimer > 0 ? this.knockVx : 0)) * dt;
@@ -185,6 +233,7 @@ export abstract class BasePlayer {
   takeDamage(amount: number, dirX: number, dirY: number): void {
     if (this.invincibilityTimer > 0) return;
     this.hp = Math.max(0, this.hp - amount);
+    getAudio(this.scene)?.playEffect('playerHurt');
     this.invincibilityTimer = PLAYER_INVINCIBILITY;
     this.flashTimer = 0;
     this.knockVx = dirX * PLAYER_KNOCKBACK;
@@ -228,6 +277,7 @@ export abstract class BasePlayer {
   }
 
   private onDie(): void {
+    getAudio(this.scene)?.playEffect('playerDie');
     this.scene.cameras.main.fade(800, 0, 0, 0);
     this.scene.time.delayedCall(900, () => this.scene.scene.restart());
   }
