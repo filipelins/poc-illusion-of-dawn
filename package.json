@@ -1,14 +1,21 @@
 {
   "name": "illusion-of-dawn",
   "version": "0.1.0",
+  "description": "Action RPG top-down estilo Zelda: A Link to the Past",
+  "author": "Frontup",
   "private": true,
   "main": "electron/main.js",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "export-map": "node scripts/export-map.mjs",
     "preview": "vite preview",
     "electron:dev": "concurrently \"vite\" \"wait-on http://localhost:3000 && NODE_ENV=development electron electron/main.js\"",
-    "electron:build": "npm run build && electron-builder"
+    "electron:build": "npm run build && electron-builder",
+    "electron:build:win": "npm run build && electron-builder --win --x64",
+    "electron:build:mac": "npm run build && electron-builder --mac",
+    "electron:build:linux": "npm run build && electron-builder --linux",
+    "gen-icon": "node scripts/gen-icon.mjs"
   },
   "devDependencies": {
     "phaser": "^3.88.2",
@@ -22,6 +29,7 @@
   "build": {
     "appId": "io.frontup.illusion-of-dawn",
     "productName": "Illusion of Dawn",
+    "copyright": "Copyright © 2025 Frontup",
     "files": [
       "dist/**/*",
       "electron/**/*",
@@ -30,15 +38,37 @@
     "directories": {
       "output": "release"
     },
+    "win": {
+      "icon": "assets/icon.ico",
+      "target": [
+        { "target": "nsis",     "arch": ["x64"] },
+        { "target": "portable", "arch": ["x64"] }
+      ],
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Illusion of Dawn",
+      "deleteAppDataOnUninstall": false,
+      "artifactName": "${productName}-${version}-Setup-${arch}.${ext}"
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}-Portable-${arch}.${ext}"
+    },
     "mac": {
       "category": "public.app-category.games",
-      "target": "dmg"
-    },
-    "win": {
-      "target": "nsis"
+      "target": [
+        { "target": "dmg", "arch": ["arm64", "x64"] }
+      ]
     },
     "linux": {
-      "target": "AppImage"
+      "target": [
+        { "target": "AppImage", "arch": ["x64"] }
+      ]
     }
   }
 }

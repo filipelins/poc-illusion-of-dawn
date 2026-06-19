@@ -1,0 +1,298 @@
+{
+  "columns": 14,
+  "firstgid": 1,
+  "image": "../public/assets/tileset-map.png",
+  "imageheight": 32,
+  "imagewidth": 448,
+  "margin": 0,
+  "name": "tileset-types",
+  "spacing": 0,
+  "tilecount": 14,
+  "tileheight": 32,
+  "tilewidth": 32,
+  "tiledversion": "1.11.2",
+  "type": "tileset",
+  "version": "1.10",
+  "tiles": [
+    {
+      "id": 0,
+      "properties": [
+        {
+          "name": "solid",
+          "type": "bool",
+          "value": false
+        },
+        {
+          "name": "type",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "value": "grass"
+        }
+      ]
+    },
+    {
+      "id": 1,
+      "properties": [
+        {
+          "name": "solid",
+          "type": "bool",
+          "value": true
+        },
+        {
+          "name": "type",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "value": "wall"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "properties": [
+        {
+          "name": "solid",
+          "type": "bool",
+          "value": true
+        },
+        {
+          "name": "type",
+          "type": "int",
+          "value": 2
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "value": "bush"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "properties": [
+        {
+          "name": "solid",
+          "type": "bool",
+          "value": false
+        },
+        {
+          "name": "type",
+          "type": "int",
+          "value": 3
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "value": "path"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "properties": [
+        {
+          "name": "solid",
+          "type": "bool",
+          "value": true
+        },
+        {
+          "name": "type",
+          "type": "int",
+          "value": 4
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "value": "water"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "properties": [
+        {
+          "name": "solid",
+          "type": "bool",
+          "value": true
+        },
+        {
+          "name": "type",
+          "type": "int",
+          "value": 5
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "value": "house-wall"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "properties": [
+        {
+          "name": "solid",
+          "type": "bool",
+          "value": false
+        },
+        {
+          "name": "type",
+          "type": "int",
+          "value": 6
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "value": "sand"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "properties": [
+        {
+          "name": "solid",
+          "type": "bool",
+          "value": false
+        },
+        {
+          "name": "type",
+          "type": "int",
+          "value": 7
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "value": "dungeon"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "properties": [
+        {
+          "name": "solid",
+          "type": "bool",
+          "value": false
+        },
+        {
+          "name": "type",
+          "type": "int",
+          "value": 8
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "value": "forest"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "properties": [
+        {
+          "name": "solid",
+          "type": "bool",
+          "value": true
+        },
+        {
+          "name": "type",
+          "type": "int",
+          "value": 9
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "value": "tree"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "properties": [
+        {
+          "name": "solid",
+          "type": "bool",
+          "value": true
+        },
+        {
+          "name": "type",
+          "type": "int",
+          "value": 10
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "value": "cactus"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "properties": [
+        {
+          "name": "solid",
+          "type": "bool",
+          "value": true
+        },
+        {
+          "name": "type",
+          "type": "int",
+          "value": 11
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "value": "ruin-wall"
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "properties": [
+        {
+          "name": "solid",
+          "type": "bool",
+          "value": true
+        },
+        {
+          "name": "type",
+          "type": "int",
+          "value": 12
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "value": "castle-wall"
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "properties": [
+        {
+          "name": "solid",
+          "type": "bool",
+          "value": false
+        },
+        {
+          "name": "type",
+          "type": "int",
+          "value": 13
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "value": "castle-door"
+        }
+      ]
+    }
+  ]
+}

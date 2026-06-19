@@ -1,10 +1,8 @@
 import Phaser from 'phaser';
 import { TILE_SIZE } from '../constants';
 import { worldDist, setCurrentMap } from '../utils/iso';
-import { Player }  from '../entities/Player';
-import { Bard }    from '../entities/Bard';
-import { Cleric }  from '../entities/Cleric';
 import type { BasePlayer } from '../entities/BasePlayer';
+import { createPlayer, setupSceneInput, setupFollowCamera } from '../utils/sceneHelpers';
 import { getAudio } from '../systems/AudioSystem';
 
 // ── Interior map (24 cols × 18 rows) ──────────────────────────────────────
@@ -51,6 +49,7 @@ export class CastleScene extends Phaser.Scene {
   private specialKey!: Phaser.Input.Keyboard.Key;
   private interactKey!: Phaser.Input.Keyboard.Key;
   private exitPrompt!: Phaser.GameObjects.Text;
+  private padInteractPrev = false;
 
   constructor() { super({ key: 'CastleScene' }); }
 
@@ -63,9 +62,16 @@ export class CastleScene extends Phaser.Scene {
     bg.fillStyle(0x0a0812); bg.fillRect(0, 0, INTERIOR_W, INTERIOR_H);
 
     this.buildMap();
-    this.spawnPlayer();
-    this.setupCamera();
-    this.setupInput();
+    this.player = createPlayer(this, ENTRY_WX, ENTRY_WY);
+    setupFollowCamera(this, this.player, INTERIOR_W, INTERIOR_H);
+
+    const input = setupSceneInput(this);
+    this.cursors     = input.cursors;
+    this.attackKey   = input.attackKey;
+    this.defendKey   = input.defendKey;
+    this.specialKey  = input.specialKey;
+    this.interactKey = input.interactKey;
+
     this.buildExitPrompt();
 
     // Ambient castle title text
@@ -92,7 +98,13 @@ export class CastleScene extends Phaser.Scene {
 
     const nearExit = worldDist(this.player.worldX, this.player.worldY, EXIT_WX, EXIT_WY) < 1.8;
     this.exitPrompt.setVisible(nearExit);
-    if (nearExit && Phaser.Input.Keyboard.JustDown(this.interactKey)) {
+
+    const pad = (this.input.gamepad as Phaser.Input.Gamepad.GamepadPlugin)?.getPad(0);
+    const bDown = pad?.buttons[1]?.pressed === true;
+    const padInteract = bDown && !this.padInteractPrev;
+    this.padInteractPrev = bDown;
+
+    if (nearExit && (Phaser.Input.Keyboard.JustDown(this.interactKey) || padInteract)) {
       this.exitCastle();
     }
   }
@@ -148,48 +160,6 @@ export class CastleScene extends Phaser.Scene {
       torch.setDepth(5);
       this.tweens.add({ targets: torch, alpha: { from: 0.8, to: 0.4 }, duration: 300 + Math.random() * 200, yoyo: true, repeat: -1 });
     }
-  }
-
-  private spawnPlayer(): void {
-    const charId = this.registry.get('selectedChar') as string ?? 'knight';
-    if (charId === 'bard') {
-      this.player = new Bard(this, ENTRY_WX, ENTRY_WY);
-    } else if (charId === 'cleric') {
-      this.player = new Cleric(this, ENTRY_WX, ENTRY_WY);
-    } else {
-      this.player = new Player(this, ENTRY_WX, ENTRY_WY);
-    }
-  }
-
-  private setupCamera(): void {
-    this.cameras.main.setZoom(2.5);
-    this.cameras.main.setBounds(0, 0, INTERIOR_W, INTERIOR_H);
-    const camTarget = this.add.rectangle(0, 0, 1, 1, 0, 0);
-    this.cameras.main.startFollow(camTarget, true, 0.1, 0.1);
-    this.events.on('update', () => camTarget.setPosition(this.player.x, this.player.y));
-  }
-
-  private setupInput(): void {
-    const kb = this.input.keyboard!;
-    this.cursors   = kb.createCursorKeys();
-    this.attackKey = kb.addKey(Phaser.Input.Keyboard.KeyCodes.Z);
-    this.defendKey = kb.addKey(Phaser.Input.Keyboard.KeyCodes.X);
-    this.specialKey = kb.addKey(Phaser.Input.Keyboard.KeyCodes.Q);
-    this.interactKey = kb.addKey(Phaser.Input.Keyboard.KeyCodes.E);
-
-    const W = kb.addKey(Phaser.Input.Keyboard.KeyCodes.W);
-    const A = kb.addKey(Phaser.Input.Keyboard.KeyCodes.A);
-    const S = kb.addKey(Phaser.Input.Keyboard.KeyCodes.S);
-    const D = kb.addKey(Phaser.Input.Keyboard.KeyCodes.D);
-    const ck = this.cursors as unknown as Record<string, Phaser.Input.Keyboard.Key>;
-    ck['W'] = W; ck['A'] = A; ck['S'] = S; ck['D'] = D;
-
-    const space = kb.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
-    space.on('down', () => {
-      (this.attackKey as unknown as Record<string, boolean>)['_justDown'] = true;
-    });
-    kb.on('keydown-SHIFT', () => { (this.defendKey as unknown as Record<string, boolean>)['isDown'] = true; });
-    kb.on('keyup-SHIFT',   () => { (this.defendKey as unknown as Record<string, boolean>)['isDown'] = false; });
   }
 
   private buildExitPrompt(): void {

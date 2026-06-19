@@ -3,6 +3,18 @@ import Phaser from 'phaser';
 export class BootScene extends Phaser.Scene {
   constructor() { super({ key: 'BootScene' }); }
 
+  preload(): void {
+    this.load.json('map-data', 'assets/map.json');
+    this.load.spritesheet('raw-tileset', 'assets/tileset-grass.png', { frameWidth: 64, frameHeight: 64 });
+    this.load.spritesheet('raw-tree',    'assets/tree.png',           { frameWidth: 192, frameHeight: 256 });
+    this.load.spritesheet('raw-bush',    'assets/bush.png',           { frameWidth: 128, frameHeight: 128 });
+    this.load.spritesheet('raw-wfoam',   'assets/water-foam.png',     { frameWidth: 192, frameHeight: 192 });
+    this.load.image('raw-rock1', 'assets/rock1.png');
+    this.load.image('raw-rock2', 'assets/rock2.png');
+    this.load.image('raw-rock3', 'assets/rock3.png');
+    this.load.image('raw-rock4', 'assets/rock4.png');
+  }
+
   create(): void {
     this.makeFloor();
     this.makePath();
@@ -40,32 +52,21 @@ export class BootScene extends Phaser.Scene {
     return this.make.graphics({} as Phaser.Types.GameObjects.Graphics.Options);
   }
 
-  // ── Grass floor tile 32×32 ────────────────────────────────────────
+  // ── Grass floor tile 32×32 — Tiny Swords colour palette ─────────
 
   private makeFloor(): void {
     const gr = this.g();
-
-    // Base green
-    gr.fillStyle(0x4a9c38); gr.fillRect(0, 0, 32, 32);
-
-    // Lighter patches for texture variation
-    gr.fillStyle(0x5aac48);
-    gr.fillRect(2, 2, 8, 6); gr.fillRect(18, 4, 6, 5);
-    gr.fillRect(12, 14, 7, 5); gr.fillRect(4, 20, 5, 6);
-    gr.fillRect(22, 18, 7, 8); gr.fillRect(10, 26, 9, 4);
-
-    // Darker accent flecks
-    gr.fillStyle(0x388028);
-    gr.fillRect(6, 8, 2, 2); gr.fillRect(24, 10, 2, 2);
-    gr.fillRect(14, 22, 2, 2); gr.fillRect(28, 26, 2, 2);
-    gr.fillRect(2, 28, 2, 2); gr.fillRect(20, 2, 2, 2);
-
-    // Tiny bright highlights (dew drops)
-    gr.fillStyle(0x7acc5a);
-    gr.fillRect(3, 5, 1, 1); gr.fillRect(16, 8, 1, 1);
-    gr.fillRect(8, 18, 1, 1); gr.fillRect(26, 22, 1, 1);
-    gr.fillRect(12, 30, 1, 1);
-
+    gr.fillStyle(0x5a9c3a); gr.fillRect(0, 0, 32, 32);
+    gr.fillStyle(0x6aac48);
+    gr.fillRect(2, 3, 7, 3); gr.fillRect(17, 2, 7, 3);
+    gr.fillRect(10, 13, 7, 3); gr.fillRect(24, 16, 6, 4);
+    gr.fillRect(4, 23, 8, 4); gr.fillRect(20, 26, 9, 4);
+    gr.fillStyle(0x4a8c2a);
+    gr.fillRect(7, 9, 2, 2); gr.fillRect(23, 11, 2, 2);
+    gr.fillRect(15, 21, 2, 2); gr.fillRect(29, 25, 2, 2);
+    gr.fillStyle(0x78bc50);
+    gr.fillRect(3, 4, 1, 1); gr.fillRect(18, 3, 1, 1);
+    gr.fillRect(11, 14, 1, 1); gr.fillRect(25, 17, 1, 1);
     gr.generateTexture('tile-floor', 32, 32);
     gr.destroy();
   }
@@ -133,50 +134,36 @@ export class BootScene extends Phaser.Scene {
     gr.destroy();
   }
 
-  // ── Forest floor tile 32×32 ───────────────────────────────────────
+  // ── Forest floor tile 32×32 — darker Tiny Swords grass ──────────
 
   private makeForestFloor(): void {
     const gr = this.g();
-    gr.fillStyle(0x1a3e14); gr.fillRect(0, 0, 32, 32);
-    // Fallen leaves
-    gr.fillStyle(0x254c1c);
-    gr.fillRect(2, 2, 7, 5); gr.fillRect(16, 4, 6, 4);
-    gr.fillRect(6, 14, 9, 5); gr.fillRect(22, 20, 7, 6);
-    gr.fillRect(3, 24, 8, 5);  gr.fillRect(18, 26, 9, 4);
-    // Root lines
-    gr.fillStyle(0x1a2e10);
-    gr.fillRect(0, 10, 32, 1); gr.fillRect(0, 22, 32, 1);
-    gr.fillRect(11, 0, 1, 10); gr.fillRect(22, 11, 1, 11);
-    // Bright tiny spots (light through canopy)
-    gr.fillStyle(0x4a7a30);
-    gr.fillRect(3, 5, 1, 1); gr.fillRect(20, 2, 1, 1);
-    gr.fillRect(8, 16, 1, 1); gr.fillRect(26, 18, 1, 1);
-    gr.fillRect(14, 28, 1, 1);
+    gr.fillStyle(0x3a7a24); gr.fillRect(0, 0, 32, 32);
+    gr.fillStyle(0x4a8a30);
+    gr.fillRect(2, 3, 7, 3); gr.fillRect(17, 2, 7, 3);
+    gr.fillRect(10, 13, 7, 3); gr.fillRect(24, 16, 6, 4);
+    gr.fillRect(4, 23, 8, 4); gr.fillRect(20, 26, 9, 4);
+    gr.fillStyle(0x2a6018);
+    gr.fillRect(7, 9, 2, 2); gr.fillRect(23, 11, 2, 2);
+    gr.fillRect(15, 21, 2, 2);
+    gr.fillStyle(0x5a9c3a, 0.4);
+    gr.fillRect(3, 5, 1, 1); gr.fillRect(18, 4, 1, 1);
+    gr.fillRect(25, 18, 1, 1);
     gr.generateTexture('tile-forest', 32, 32);
     gr.destroy();
   }
 
-  // ── Water tile 32×32 ─────────────────────────────────────────────
+  // ── Water tile 32×32 — same teal as background (seamless) ────────
 
   private makeWater(): void {
-    const gr = this.g();
-    gr.fillStyle(0x1060b0); gr.fillRect(0, 0, 32, 32);
-    // Ripple lines (lighter horizontal bands)
-    gr.fillStyle(0x2080d8);
-    gr.fillRect(0, 3, 32, 3); gr.fillRect(0, 11, 32, 3);
-    gr.fillRect(0, 19, 32, 3); gr.fillRect(0, 27, 32, 3);
-    // Highlight peaks
-    gr.fillStyle(0x60b8f8);
-    gr.fillRect(4, 4, 6, 1); gr.fillRect(18, 4, 8, 1);
-    gr.fillRect(2, 12, 4, 1); gr.fillRect(14, 12, 10, 1);
-    gr.fillRect(8, 20, 7, 1);  gr.fillRect(22, 20, 5, 1);
-    gr.fillRect(3, 28, 8, 1);  gr.fillRect(18, 28, 6, 1);
-    // Foam at edges (subtle)
-    gr.fillStyle(0xc0e8ff, 0.4);
-    gr.fillRect(0, 0, 32, 1); gr.fillRect(0, 31, 32, 1);
-    gr.fillRect(0, 0, 1, 32); gr.fillRect(31, 0, 1, 32);
-    gr.generateTexture('tile-water', 32, 32);
-    gr.destroy();
+    const foam = this.make.sprite({ x: 0, y: 0, key: 'raw-wfoam', frame: 0 }, false);
+    foam.setOrigin(0, 0).setScale(32 / 192);
+    const rt = this.add.renderTexture(0, 0, 32, 32);
+    rt.fill(0x2ec0c0, 1); // matches main.ts backgroundColor
+    rt.draw(foam, 0, 0);
+    rt.saveTexture('tile-water');
+    rt.destroy();
+    foam.destroy();
   }
 
   // ── Stone wall tile 32×40 (8px south-face overhang) ──────────────
@@ -184,71 +171,47 @@ export class BootScene extends Phaser.Scene {
   private makeWall(): void {
     const gr = this.g();
 
-    // Top face — light stone
-    gr.fillStyle(0x909080); gr.fillRect(0, 0, 32, 32);
+    // Top face — Tiny Swords grass (matches floor tile)
+    gr.fillStyle(0x5a9c3a); gr.fillRect(0, 0, 32, 32);
+    gr.fillStyle(0x6aac48);
+    gr.fillRect(2, 4, 6, 3); gr.fillRect(16, 3, 7, 3);
+    gr.fillRect(22, 19, 6, 4); gr.fillRect(4, 24, 7, 4);
+    gr.fillStyle(0x4a8c2a);
+    gr.fillRect(8, 10, 2, 2); gr.fillRect(25, 14, 2, 2);
 
-    // Stone block mortar lines (horizontal)
-    gr.fillStyle(0x6a6a5a);
-    gr.fillRect(0, 10, 32, 2); gr.fillRect(0, 22, 32, 2);
+    // Edge shadow at south rim (grass-to-cliff transition)
+    gr.fillStyle(0x2a5018); gr.fillRect(0, 30, 32, 2);
 
-    // Stone block mortar lines (vertical, offset per row)
-    gr.fillRect(8, 0, 2, 10); gr.fillRect(22, 0, 2, 10);
-    gr.fillRect(16, 12, 2, 10); gr.fillRect(2, 12, 2, 10);
-    gr.fillRect(10, 24, 2, 8); gr.fillRect(24, 24, 2, 8);
-
-    // Block face highlights (top-left of each stone)
-    gr.fillStyle(0xb0b09a);
-    gr.fillRect(1, 1, 6, 2); gr.fillRect(11, 1, 8, 2); gr.fillRect(25, 1, 5, 2);
-    gr.fillRect(4, 12, 10, 2); gr.fillRect(19, 12, 11, 2);
-    gr.fillRect(1, 24, 8, 2); gr.fillRect(13, 24, 9, 2); gr.fillRect(27, 24, 3, 2);
-
-    // Block face shadow (bottom-right of stones)
-    gr.fillStyle(0x787068);
-    gr.fillRect(0, 8, 7, 2); gr.fillRect(10, 8, 11, 2); gr.fillRect(23, 8, 7, 2);
-
-    // South face of wall (3D illusion) — darker band
-    gr.fillStyle(0x484038); gr.fillRect(0, 32, 32, 8);
-    // Highlight at top of south face
-    gr.fillStyle(0x585048); gr.fillRect(0, 32, 32, 2);
-    // Mortar on south face
-    gr.fillStyle(0x383028);
-    gr.fillRect(10, 33, 2, 7); gr.fillRect(22, 33, 2, 7);
+    // South cliff face — Tiny Swords blue-gray stone (#748c95)
+    gr.fillStyle(0x7a9098); gr.fillRect(0, 32, 32, 8);
+    // Stone highlight row at top of cliff
+    gr.fillStyle(0x9ab0b8); gr.fillRect(0, 32, 32, 2);
+    // Stone shading band at base
+    gr.fillStyle(0x506878); gr.fillRect(0, 37, 32, 3);
+    // Horizontal stone block lines
+    gr.fillStyle(0x607888);
+    gr.fillRect(0, 34, 9, 1); gr.fillRect(14, 34, 12, 1); gr.fillRect(28, 34, 4, 1);
+    // Vertical mortar joints
+    gr.fillStyle(0x405868);
+    gr.fillRect(9, 32, 1, 8); gr.fillRect(22, 32, 1, 8);
+    // Inner block highlights
+    gr.fillStyle(0x8aa8b0);
+    gr.fillRect(1, 33, 7, 1); gr.fillRect(15, 33, 6, 1);
 
     gr.generateTexture('tile-wall', 32, 40);
     gr.destroy();
   }
 
-  // ── Bush obstacle tile 32×32 ──────────────────────────────────────
+  // ── Bush obstacle tile 32×32 — Tiny Swords bush frame 0 ─────────
 
   private makeBush(): void {
-    const gr = this.g();
-
-    // Dark green base
-    gr.fillStyle(0x2a7020); gr.fillRect(0, 0, 32, 32);
-
-    // Rounded bush clumps
-    gr.fillStyle(0x3a9030);
-    gr.fillCircle(10, 10, 9); gr.fillCircle(22, 10, 9);
-    gr.fillCircle(10, 22, 9); gr.fillCircle(22, 22, 9);
-    gr.fillCircle(16, 16, 10);
-
-    // Bright highlight clusters
-    gr.fillStyle(0x50b840);
-    gr.fillCircle(8, 7, 5); gr.fillCircle(20, 7, 5);
-    gr.fillCircle(8, 20, 5); gr.fillCircle(24, 20, 5);
-    gr.fillCircle(16, 12, 6);
-
-    // Tiny light spots
-    gr.fillStyle(0x70d458);
-    gr.fillRect(6, 5, 3, 3); gr.fillRect(19, 5, 3, 3);
-    gr.fillRect(14, 10, 3, 3); gr.fillRect(24, 18, 3, 3);
-
-    // Dark shadow under bush edges
-    gr.fillStyle(0x1a5010, 0.8);
-    gr.fillRect(2, 26, 28, 4);
-
-    gr.generateTexture('tile-bush', 32, 32);
-    gr.destroy();
+    const spr = this.make.sprite({ x: 0, y: 0, key: 'raw-bush', frame: 0 }, false);
+    spr.setOrigin(0, 0).setScale(0.25); // 128 * 0.25 = 32
+    const rt = this.add.renderTexture(0, 0, 32, 32);
+    rt.draw(spr, 0, 0);
+    rt.saveTexture('tile-bush');
+    rt.destroy();
+    spr.destroy();
   }
 
   // ── Brick house wall 32×40 ───────────────────────────────────────
@@ -277,33 +240,17 @@ export class BootScene extends Phaser.Scene {
     gr.destroy();
   }
 
-  // ── Forest tree 32×40 (taller, darker) ───────────────────────────
+  // ── Forest tree 48×72 — Tiny Swords pine tree, larger for impact ─
 
   private makeTree(): void {
-    const gr = this.g();
-    // Forest floor base
-    gr.fillStyle(0x1a3e14); gr.fillRect(0, 0, 32, 32);
-    // Trunk
-    gr.fillStyle(0x5a3818); gr.fillRect(12, 20, 8, 12);
-    gr.fillStyle(0x483010); gr.fillRect(14, 22, 4, 10);
-    // Dark outer crown
-    gr.fillStyle(0x1e5a18); gr.fillCircle(10, 12, 10); gr.fillCircle(22, 12, 10);
-    gr.fillCircle(16, 8, 12);
-    // Mid crown
-    gr.fillStyle(0x2e7a28);
-    gr.fillCircle(9, 10, 7); gr.fillCircle(23, 10, 7);
-    gr.fillCircle(16, 6, 9);
-    // Bright highlights
-    gr.fillStyle(0x50a040);
-    gr.fillCircle(8, 7, 4); gr.fillCircle(20, 7, 4);
-    gr.fillCircle(14, 4, 5);
-    // Top glint
-    gr.fillStyle(0x78c860);
-    gr.fillRect(7, 5, 3, 2); gr.fillRect(19, 5, 3, 2); gr.fillRect(14, 2, 4, 2);
-    // Shadow under tree
-    gr.fillStyle(0x0a2008, 0.6); gr.fillEllipse(16, 30, 20, 6);
-    gr.generateTexture('tile-tree', 32, 40);
-    gr.destroy();
+    // Tree1.png: 8 frames of 192×256; scale to 48 wide × 64 tall
+    const spr = this.make.sprite({ x: 0, y: 0, key: 'raw-tree', frame: 0 }, false);
+    spr.setOrigin(0, 0).setScale(0.25); // 192×256 × 0.25 = 48×64
+    const rt = this.add.renderTexture(0, 0, 48, 64);
+    rt.draw(spr, 0, 0);
+    rt.saveTexture('tile-tree');
+    rt.destroy();
+    spr.destroy();
   }
 
   // ── Desert cactus 32×40 ──────────────────────────────────────────
@@ -999,31 +946,29 @@ export class BootScene extends Phaser.Scene {
     gr.destroy();
   }
 
-  // ── Castle wall 32×40 (dark stone with crenellations) ────────────────
+  // ── Castle wall 32×40 — Tiny Swords dark cliff with crenellations ─
 
   private makeCastleWall(): void {
     const gr = this.g();
-    // Top face — very dark grey stone
-    gr.fillStyle(0x3a3848); gr.fillRect(0, 0, 32, 32);
-    // Mortar seams horizontal
-    gr.fillStyle(0x262434);
-    gr.fillRect(0, 10, 32, 2); gr.fillRect(0, 22, 32, 2);
-    // Mortar seams vertical
-    gr.fillRect(8, 0, 2, 10); gr.fillRect(20, 0, 2, 10);
-    gr.fillRect(14, 12, 2, 10); gr.fillRect(2, 12, 2, 10);
-    gr.fillRect(6, 24, 2, 8);  gr.fillRect(22, 24, 2, 8);
-    // Block face highlights
-    gr.fillStyle(0x4a4858);
-    gr.fillRect(1, 1, 6, 2); gr.fillRect(11, 1, 8, 2); gr.fillRect(23, 1, 5, 2);
-    gr.fillRect(4, 12, 8, 2); gr.fillRect(17, 12, 9, 2);
-    // Crenellations (merlons) at top
-    gr.fillStyle(0x282636); gr.fillRect(0, 0, 7, 5); gr.fillRect(11, 0, 8, 5); gr.fillRect(24, 0, 8, 5);
-    gr.fillStyle(0x4a4858); gr.fillRect(7, 0, 4, 6); gr.fillRect(19, 0, 5, 6);
-    // South face
-    gr.fillStyle(0x18162a); gr.fillRect(0, 32, 32, 8);
-    gr.fillStyle(0x222038); gr.fillRect(0, 32, 32, 2);
-    gr.fillStyle(0x10101e);
-    gr.fillRect(8, 33, 2, 7); gr.fillRect(20, 33, 2, 7);
+    // Top face — dark stone (castle interior)
+    gr.fillStyle(0x4a5060); gr.fillRect(0, 0, 32, 32);
+    gr.fillStyle(0x5a6070); gr.fillRect(1, 1, 6, 2); gr.fillRect(11, 1, 9, 2); gr.fillRect(24, 1, 5, 2);
+    gr.fillRect(4, 12, 8, 2); gr.fillRect(17, 12, 11, 2);
+    gr.fillStyle(0x3a404e);
+    gr.fillRect(0, 10, 32, 1); gr.fillRect(0, 22, 32, 1);
+    gr.fillRect(10, 0, 1, 10); gr.fillRect(23, 0, 1, 10);
+    // Crenellations
+    gr.fillStyle(0x3a404e); gr.fillRect(0, 0, 7, 6); gr.fillRect(12, 0, 8, 6); gr.fillRect(25, 0, 7, 6);
+    gr.fillStyle(0x5a6070); gr.fillRect(7, 0, 5, 7); gr.fillRect(20, 0, 5, 7);
+    // Shadow at edge
+    gr.fillStyle(0x1a2028); gr.fillRect(0, 30, 32, 2);
+    // South face — dark Tiny Swords stone
+    gr.fillStyle(0x506070); gr.fillRect(0, 32, 32, 8);
+    gr.fillStyle(0x6a8090); gr.fillRect(0, 32, 32, 2);
+    gr.fillStyle(0x304050); gr.fillRect(0, 37, 32, 3);
+    gr.fillStyle(0x405060);
+    gr.fillRect(0, 34, 9, 1); gr.fillRect(14, 34, 12, 1);
+    gr.fillRect(10, 32, 1, 8); gr.fillRect(23, 32, 1, 8);
     gr.generateTexture('tile-castle-wall', 32, 40);
     gr.destroy();
   }

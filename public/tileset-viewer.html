@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Tileset Viewer — Illusion of Dawn</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #2ec0c0; font-family: monospace; color: #fff; padding: 20px; }
+    h1 { font-size: 18px; margin-bottom: 6px; }
+    .meta { font-size: 12px; color: #d0ffff; margin-bottom: 16px; }
+    .grid { display: flex; gap: 24px; flex-wrap: wrap; }
+    .panel { }
+    .panel h2 { font-size: 13px; color: #ffe; margin-bottom: 6px; }
+    canvas { image-rendering: pixelated; border: 2px solid rgba(255,255,255,0.4); display: block; }
+    #hover-info { margin-top: 12px; font-size: 13px; background: rgba(0,0,0,0.5); padding: 8px 12px; border-radius: 6px; display: inline-block; }
+    .legend { margin-top: 16px; font-size: 11px; color: #d0ffff; max-width: 600px; }
+  </style>
+</head>
+<body>
+  <h1>Tileset Viewer — tileset-grass.png</h1>
+  <p class="meta">576×384px · 64×64px por frame · 9 colunas × 6 linhas = 54 frames (índice 0–53)</p>
+
+  <div class="grid">
+    <div class="panel">
+      <h2>Tileset completo (escala 2×)</h2>
+      <canvas id="full"></canvas>
+    </div>
+    <div class="panel">
+      <h2>Frame isolado (escala 6×)</h2>
+      <canvas id="zoom"></canvas>
+    </div>
+  </div>
+
+  <div id="hover-info">Passe o mouse sobre um frame para ver detalhes</div>
+
+  <div class="legend">
+    <strong>Como usar:</strong> identifique o índice de cada frame e atualize
+    <code>src/config/TilesetGrass.ts</code> com os valores corretos.
+    Frames do grupo esquerdo (cols 0–3) = cliff normal.
+    Frames do grupo direito (cols 4–8) = cliff alto / duplo.
+    Linhas 0–3 = superfície + borda de grama.
+    Linhas 4–5 = face de pedra do penhasco.
+  </div>
+
+<script>
+const FRAME_W = 64, FRAME_H = 64;
+const COLS = 9, ROWS = 6;
+const SCALE = 2;
+const ZOOM_SCALE = 6;
+
+const img = new Image();
+img.src = 'assets/tileset-grass.png';
+
+img.onload = () => {
+  // ── Full tileset canvas ──────────────────────────────────────────
+  const fullCanvas = document.getElementById('full');
+  fullCanvas.width  = img.width  * SCALE;
+  fullCanvas.height = img.height * SCALE;
+  const ctx = fullCanvas.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+
+  const drawFull = (highlight = -1) => {
+    ctx.clearRect(0, 0, fullCanvas.width, fullCanvas.height);
+    ctx.drawImage(img, 0, 0, img.width * SCALE, img.height * SCALE);
+
+    for (let row = 0; row < ROWS; row++) {
+      for (let col = 0; col < COLS; col++) {
+        const idx = row * COLS + col;
+        const x = col * FRAME_W * SCALE;
+        const y = row * FRAME_H * SCALE;
+        const fw = FRAME_W * SCALE;
+        const fh = FRAME_H * SCALE;
+
+        // Highlight
+        if (idx === highlight) {
+          ctx.fillStyle = 'rgba(255,255,0,0.25)';
+          ctx.fillRect(x, y, fw, fh);
+        }
+
+        // Grid
+        ctx.strokeStyle = idx === highlight ? 'rgba(255,255,0,1)' : 'rgba(255,255,255,0.45)';
+        ctx.lineWidth = idx === highlight ? 2 : 1;
+        ctx.strokeRect(x + 0.5, y + 0.5, fw - 1, fh - 1);
+
+        // Frame index label
+        const label = String(idx);
+        ctx.font = `bold ${10}px monospace`;
+        // Shadow
+        ctx.fillStyle = 'rgba(0,0,0,0.85)';
+        ctx.fillText(label, x + 4, y + 13);
+        // Colour by region
+        const color = col < 4 ? '#ffff44' : '#44ffff';
+        ctx.fillStyle = color;
+        ctx.fillText(label, x + 3, y + 12);
+
+        // Row/col label in corner
+        ctx.font = `${8}px monospace`;
+        ctx.fillStyle = 'rgba(255,255,255,0.55)';
+        ctx.fillText(`r${row}c${col}`, x + 3, y + fh - 4);
+      }
+    }
+  };
+
+  drawFull();
+
+  // ── Zoom canvas ──────────────────────────────────────────────────
+  const zoomCanvas = document.getElementById('zoom');
+  zoomCanvas.width  = FRAME_W * ZOOM_SCALE;
+  zoomCanvas.height = FRAME_H * ZOOM_SCALE;
+  const zctx = zoomCanvas.getContext('2d');
+  zctx.imageSmoothingEnabled = false;
+
+  const drawZoom = (row, col) => {
+    zctx.clearRect(0, 0, zoomCanvas.width, zoomCanvas.height);
+    zctx.drawImage(
+      img,
+      col * FRAME_W, row * FRAME_H, FRAME_W, FRAME_H,
+      0, 0, FRAME_W * ZOOM_SCALE, FRAME_H * ZOOM_SCALE
+    );
+    // Grid lines at 1-px intervals
+    zctx.strokeStyle = 'rgba(255,255,0,0.15)';
+    zctx.lineWidth = 1;
+    for (let i = 1; i < FRAME_W; i++) {
+      zctx.beginPath();
+      zctx.moveTo(i * ZOOM_SCALE, 0);
+      zctx.lineTo(i * ZOOM_SCALE, FRAME_H * ZOOM_SCALE);
+      zctx.stroke();
+    }
+    for (let j = 1; j < FRAME_H; j++) {
+      zctx.beginPath();
+      zctx.moveTo(0, j * ZOOM_SCALE);
+      zctx.lineTo(FRAME_W * ZOOM_SCALE, j * ZOOM_SCALE);
+      zctx.stroke();
+    }
+  };
+
+  // ── Hover interaction ────────────────────────────────────────────
+  const info = document.getElementById('hover-info');
+
+  fullCanvas.addEventListener('mousemove', e => {
+    const rect = fullCanvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    const col = Math.floor(mx / (FRAME_W * SCALE));
+    const row = Math.floor(my / (FRAME_H * SCALE));
+    if (col < 0 || col >= COLS || row < 0 || row >= ROWS) return;
+    const idx = row * COLS + col;
+    const group = col < 4 ? 'Esquerdo (cliff normal)' : 'Direito (cliff alto)';
+    const region = row < 4 ? 'Superfície/borda de grama' : 'Face de pedra';
+
+    info.innerHTML =
+      `<strong>Frame ${idx}</strong> &nbsp;|&nbsp; ` +
+      `Linha ${row}, Coluna ${col} &nbsp;|&nbsp; ` +
+      `Grupo: ${group} &nbsp;|&nbsp; Região: ${region}`;
+
+    drawFull(idx);
+    drawZoom(row, col);
+  });
+
+  fullCanvas.addEventListener('click', e => {
+    const rect = fullCanvas.getBoundingClientRect();
+    const col = Math.floor((e.clientX - rect.left) / (FRAME_W * SCALE));
+    const row = Math.floor((e.clientY - rect.top)  / (FRAME_H * SCALE));
+    if (col < 0 || col >= COLS || row < 0 || row >= ROWS) return;
+    const idx = row * COLS + col;
+    navigator.clipboard?.writeText(String(idx));
+    info.innerHTML += ' &nbsp;<span style="color:#9f9">✓ índice copiado!</span>';
+  });
+};
+
+img.onerror = () => {
+  document.body.innerHTML += '<p style="color:red;margin-top:20px">⚠ Não foi possível carregar assets/tileset-grass.png — rode o servidor dev primeiro: <code>npm run dev</code></p>';
+};
+</script>
+</body>
+</html>

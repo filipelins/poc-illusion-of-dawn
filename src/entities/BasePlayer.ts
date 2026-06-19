@@ -36,6 +36,7 @@ export abstract class BasePlayer {
 
   readonly hitEnemies = new Set<object>();
   private padPrev: boolean[] = [];
+  private storedCursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   protected sprite!: Phaser.GameObjects.Sprite;
   protected scene: Phaser.Scene;
 
@@ -88,6 +89,7 @@ export abstract class BasePlayer {
     specialKey: Phaser.Input.Keyboard.Key,
     delta: number
   ): void {
+    this.storedCursors = cursors;
     const pad = this.readPad();
     this.tickTimers(delta);
     this.handleDefend(defendKey, pad);
@@ -143,15 +145,17 @@ export abstract class BasePlayer {
   private handleDefend(key: Phaser.Input.Keyboard.Key, pad: Phaser.Input.Gamepad.Gamepad | null): void {
     // X / Square (button 2) or LB / L1 (button 4)
     const padDefend = pad ? (this.padIsDown(pad, 2) || this.padIsDown(pad, 4)) : false;
-    if (!this._attacking) this._defending = key.isDown || padDefend;
+    const shiftDown = this.storedCursors?.shift?.isDown ?? false;
+    if (!this._attacking) this._defending = key.isDown || shiftDown || padDefend;
   }
 
   // ── Shared: attack input ───────────────────────────────────────────
 
   protected handleAttackInput(key: Phaser.Input.Keyboard.Key, pad: Phaser.Input.Gamepad.Gamepad | null): void {
     // A / Cross (button 0) or RB / R1 (button 5)
-    const padJust = pad ? (this.padJustPressed(pad, 0) || this.padJustPressed(pad, 5)) : false;
-    if ((Phaser.Input.Keyboard.JustDown(key) || padJust) && this.attackCooldown <= 0 && !this._attacking) {
+    const padJust   = pad ? (this.padJustPressed(pad, 0) || this.padJustPressed(pad, 5)) : false;
+    const spaceJust = this.storedCursors ? Phaser.Input.Keyboard.JustDown(this.storedCursors.space) : false;
+    if ((Phaser.Input.Keyboard.JustDown(key) || spaceJust || padJust) && this.attackCooldown <= 0 && !this._attacking) {
       this.beginAttack();
     }
   }

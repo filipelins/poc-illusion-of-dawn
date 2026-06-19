@@ -1,14 +1,12 @@
 import Phaser from 'phaser';
 import {
-  TILE_SIZE, MAP_COLS, MAP_ROWS, MAP_DATA,
-  WORLD_W, WORLD_H, CONTACT_RADIUS, PROJ_SPEED, SOLID_TILES,
+  TILE_SIZE, MAP_COLS, MAP_ROWS,
+  WORLD_W, WORLD_H, CONTACT_RADIUS, SOLID_TILES,
   BOSS_CONTACT_DIST, CASTLE_DOOR_WX, CASTLE_DOOR_WY
 } from '../constants';
+import { createPlayer, setupSceneInput, setupFollowCamera } from '../utils/sceneHelpers';
 import { worldDist, isWall, setCurrentMap } from '../utils/iso';
 import { getAudio } from '../systems/AudioSystem';
-import { Player }  from '../entities/Player';
-import { Bard }    from '../entities/Bard';
-import { Cleric }       from '../entities/Cleric';
 import { MindDevourer } from '../entities/MindDevourer';
 import type { BasePlayer } from '../entities/BasePlayer';
 import { Slime }   from '../entities/Slime';
@@ -16,10 +14,10 @@ import { Skeleton } from '../entities/Skeleton';
 import { Wizard }  from '../entities/Wizard';
 import type { BaseEnemy } from '../entities/BaseEnemy';
 import { WeatherSystem } from '../systems/WeatherSystem';
-
-const PLAYER_MAX_HP = 10;
+import { GRASS_SURFACE, CLIFF_FACE } from '../config/TilesetGrass';
 
 export class GameScene extends Phaser.Scene {
+  private mapData: number[][] = [];
   private player!: BasePlayer;
   private enemies: BaseEnemy[] = [];
   private wizards: Wizard[] = [];
@@ -44,12 +42,19 @@ export class GameScene extends Phaser.Scene {
     this.boss = null;
     this.bossSpawned = false;
 
-    setCurrentMap(MAP_DATA, MAP_COLS, MAP_ROWS);
+    this.mapData = this.loadMapData();
+    setCurrentMap(this.mapData, MAP_COLS, MAP_ROWS);
     this.buildTileMap();
-    this.spawnPlayer();
+    this.player = createPlayer(this, 30.5, 6.5);
     this.spawnEnemies();
-    this.setupCamera();
-    this.setupInput();
+    setupFollowCamera(this, this.player, WORLD_W, WORLD_H);
+
+    const input = setupSceneInput(this);
+    this.cursors     = input.cursors;
+    this.attackKey   = input.attackKey;
+    this.defendKey   = input.defendKey;
+    this.specialKey  = input.specialKey;
+    this.interactKey = input.interactKey;
 
     this.doorPrompt = this.add.text(0, 0, '[ E ]  Entrar no Castelo', {
       fontSize: '11px', color: '#ffeeaa',
@@ -218,12 +223,64 @@ export class GameScene extends Phaser.Scene {
     return 'tile-floor';
   }
 
+  private loadMapData(): number[][] {
+    const json = this.cache.json.get('map-data') as {
+      layers: Array<{ data: number[]; name: string }>;
+      width: number; height: number;
+    };
+    const layer = json.layers.find(l => l.name === 'Ground')!;
+    const flat  = layer.data;
+    const data: number[][] = [];
+    for (let r = 0; r < MAP_ROWS; r++)
+      data.push(flat.slice(r * MAP_COLS, (r + 1) * MAP_COLS).map(id => id - 1)); // Tiled é 1-based
+    return data;
+  }
+
+  // Returns 4-bit bitmask: bit0=N bit1=E bit2=S bit3=W — set if neighbour is land (not water).
+  private getGrassBitmask(row: number, col: number): number {
+    const land = (r: number, c: number) =>
+      r >= 0 && r < MAP_ROWS && c >= 0 && c < MAP_COLS && this.mapData[r][c] !== 4;
+    return (land(row - 1, col) ? 1 : 0)
+         | (land(row, col + 1) ? 2 : 0)
+         | (land(row + 1, col) ? 4 : 0)
+         | (land(row, col - 1) ? 8 : 0);
+  }
+
   private buildTileMap(): void {
+    // Seeded pseudo-random for deterministic decoration placement
+    let rngState = 42;
+    const rng = () => { rngState = (rngState * 1664525 + 1013904223) & 0xffffffff; return (rngState >>> 0) / 4294967296; };
+
     for (let row = 0; row < MAP_ROWS; row++) {
       for (let col = 0; col < MAP_COLS; col++) {
         const x = col * TILE_SIZE;
         const y = row * TILE_SIZE;
-        const type = MAP_DATA[row][col];
+        const type = this.mapData[row][col];
+
+        // Water tiles (type 4): let teal background show through
+        if (type === 4) {
+          this.add.image(x, y, 'tile-water').setOrigin(0, 0).setDepth(0).setAlpha(0.55);
+          rng(); rng(); rng(); // consume rng so rock placement stays deterministic
+          continue;
+        }
+
+        // Grass tiles (type 0): autotile from Tiny Swords tileset
+        if (type === 0) {
+          const mask  = this.getGrassBitmask(row, col);
+          const frame = GRASS_SURFACE[mask] ?? GRASS_SURFACE[15];
+          this.add.image(x, y, 'raw-tileset', frame)
+            .setOrigin(0, 0).setDisplaySize(TILE_SIZE, TILE_SIZE).setDepth(0);
+
+          // South cliff face when water is immediately below this tile
+          if (!(mask & 4) && row + 1 < MAP_ROWS && this.mapData[row + 1][col] === 4) {
+            const cfFrame = !(mask & 8) ? CLIFF_FACE.southLeft
+                          : !(mask & 2) ? CLIFF_FACE.southRight
+                          : CLIFF_FACE.south;
+            this.add.image(x, y + TILE_SIZE, 'raw-tileset', cfFrame)
+              .setOrigin(0, 0).setDisplaySize(TILE_SIZE, TILE_SIZE).setDepth(row + 1.1);
+          }
+          continue;
+        }
 
         this.add.image(x, y, this.floorTex(type, row, col)).setOrigin(0, 0).setDepth(0);
 
@@ -232,28 +289,27 @@ export class GameScene extends Phaser.Scene {
         else if (type === 2)                topTex = 'tile-bush';
         else if (type === 9)                topTex = 'tile-tree';
         else if (type === 10)               topTex = 'tile-cactus';
-        else if (type === 4)                topTex = 'tile-water';
         else if (type === 5)                topTex = 'tile-house-wall';
         else if (type === 12)               topTex = 'tile-castle-wall';
         else if (type === 13)               topTex = 'tile-castle-door';
 
         if (topTex) this.add.image(x, y, topTex).setOrigin(0, 0).setDepth(row + 0.1);
+
+        // Rock decorations on wall tiles
+        if ((type === 1 || type === 11) && rng() < 0.25) {
+          const rockKey = `raw-rock${Math.floor(rng() * 4) + 1}`;
+          const ox = Math.floor(rng() * 20) + 4;
+          const oy = Math.floor(rng() * 16) + 4;
+          this.add.image(x + ox, y + oy, rockKey)
+            .setDisplaySize(18, 18)
+            .setDepth(row + 0.5)
+            .setAlpha(0.92);
+        }
       }
     }
   }
 
   // ── SPAWN ────────────────────────────────────────────────────────────
-
-  private spawnPlayer(): void {
-    const charId = this.registry.get('selectedChar') as string ?? 'knight';
-    if (charId === 'bard') {
-      this.player = new Bard(this, 30.5, 6.5);
-    } else if (charId === 'cleric') {
-      this.player = new Cleric(this, 30.5, 6.5);
-    } else {
-      this.player = new Player(this, 30.5, 6.5);
-    }
-  }
 
   private spawnEnemies(): void {
     const px = 30.5, py = 6.5;
@@ -262,7 +318,7 @@ export class GameScene extends Phaser.Scene {
       const pts: Array<[number, number]> = [];
       for (let r = 1; r < MAP_ROWS - 1; r++) {
         for (let c = 1; c < MAP_COLS - 1; c++) {
-          if (SOLID_TILES.has(MAP_DATA[r][c])) continue;
+          if (SOLID_TILES.has(this.mapData[r][c])) continue;
           if (worldDist(c, r, px, py) < 4) continue;
           pts.push([c + 0.5, r + 0.5]);
         }
@@ -399,44 +455,4 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
-  // ── CAMERA ───────────────────────────────────────────────────────────
-
-  private setupCamera(): void {
-    this.cameras.main.setZoom(2.5);
-    this.cameras.main.setBounds(0, 0, WORLD_W, WORLD_H);
-
-    const camTarget = this.add.rectangle(0, 0, 1, 1, 0x000000, 0);
-    this.cameras.main.startFollow(camTarget, true, 0.1, 0.1);
-
-    this.events.on('update', () => {
-      camTarget.setPosition(this.player.x, this.player.y);
-    });
-  }
-
-  // ── INPUT ────────────────────────────────────────────────────────────
-
-  private setupInput(): void {
-    const kb = this.input.keyboard!;
-    this.cursors   = kb.createCursorKeys();
-    this.attackKey = kb.addKey(Phaser.Input.Keyboard.KeyCodes.Z);
-    this.defendKey = kb.addKey(Phaser.Input.Keyboard.KeyCodes.X);
-    this.specialKey = kb.addKey(Phaser.Input.Keyboard.KeyCodes.Q);
-
-    const W = kb.addKey(Phaser.Input.Keyboard.KeyCodes.W);
-    const A = kb.addKey(Phaser.Input.Keyboard.KeyCodes.A);
-    const S = kb.addKey(Phaser.Input.Keyboard.KeyCodes.S);
-    const D = kb.addKey(Phaser.Input.Keyboard.KeyCodes.D);
-    const ck = this.cursors as unknown as Record<string, Phaser.Input.Keyboard.Key>;
-    ck['W'] = W; ck['A'] = A; ck['S'] = S; ck['D'] = D;
-
-    const space = kb.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
-    space.on('down', () => {
-      (this.attackKey as unknown as Record<string, boolean>)['_justDown'] = true;
-    });
-
-    kb.on('keydown-SHIFT', () => { (this.defendKey as unknown as Record<string, boolean>)['isDown'] = true; });
-    kb.on('keyup-SHIFT',   () => { (this.defendKey as unknown as Record<string, boolean>)['isDown'] = false; });
-
-    this.interactKey = kb.addKey(Phaser.Input.Keyboard.KeyCodes.E);
-  }
 }

@@ -8,7 +8,7 @@ import { CastleScene } from './scenes/CastleScene';
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
   parent: 'game-container',
-  backgroundColor: '#000000',
+  backgroundColor: '#2ec0c0',
   pixelArt: true,
   scale: {
     mode: Phaser.Scale.EXPAND,

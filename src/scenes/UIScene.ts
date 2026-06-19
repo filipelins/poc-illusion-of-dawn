@@ -20,8 +20,8 @@ export class UIScene extends Phaser.Scene {
   constructor() { super({ key: 'UIScene' }); }
 
   create(): void {
-    // Heart row
-    for (let i = 0; i < 6; i++) {
+    // Heart row — pre-allocate for max Knight HP (10)
+    for (let i = 0; i < 10; i++) {
       const heart = this.add.image(16 + i * 22, 16, 'heart-full')
         .setScrollFactor(0)
         .setDepth(100)
@@ -114,7 +114,7 @@ export class UIScene extends Phaser.Scene {
 
     // Listen to registry changes
     this.registry.events.on('changedata', this.onRegistryChange, this);
-    const maxHp = this.registry.get('playerMaxHP') as number ?? 6;
+    const maxHp = this.registry.get('playerMaxHP') as number ?? 10;
     this.syncHp(maxHp, maxHp);
 
     const char = this.registry.get('selectedChar') as string;

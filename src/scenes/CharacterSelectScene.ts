@@ -39,7 +39,7 @@ const CHARS: CharDef[] = [
     name: 'CLERIC',
     spriteTex: 'cleric-down',
     desc: ['Holy mage hurling divine bolts.', 'Q tears reality open:', '"Double damage for 2 seconds."'],
-    hp: 8, atk: 6, spd: 6,
+    hp: 80, atk: 60, spd: 16,
     special: 'Q — Divine Realm (2s ×2 DMG)',
     cardColor: 0x1a1a30,
     accentColor: 0xaaddff,

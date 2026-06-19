@@ -4,3 +4,6 @@ release/
 .vite/
 .vercel
 .env*.local
+.DS_Store
+*.tiled-project
+*.tiled-session
