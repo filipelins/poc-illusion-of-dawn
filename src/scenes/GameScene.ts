@@ -52,6 +52,7 @@ export class GameScene extends Phaser.Scene {
   private interactKey!: Phaser.Input.Keyboard.Key;
   private doorPrompt!: Phaser.GameObjects.Text;
   private padInteractPrev = false;
+  private padRealmPrev    = false;
 
   constructor() { super({ key: 'GameScene' }); }
 
@@ -129,9 +130,13 @@ export class GameScene extends Phaser.Scene {
 
     this.player.update(this.cursors, this.attackKey, this.defendKey, this.specialKey, delta);
 
-    // Realm toggle
+    // Realm toggle — R key or Back/Select (button 8)
+    const pad0 = (this.input.gamepad as Phaser.Input.Gamepad.GamepadPlugin)?.getPad(0);
+    const padRealmDown = pad0?.buttons[8]?.pressed === true;
+    const padRealmJust = padRealmDown && !this.padRealmPrev;
+    this.padRealmPrev  = padRealmDown;
     if (this.realmUnlocked && !this.realmTransitioning &&
-        Phaser.Input.Keyboard.JustDown(this.realmKey)) {
+        (Phaser.Input.Keyboard.JustDown(this.realmKey) || padRealmJust)) {
       this.toggleRealm();
     }
 

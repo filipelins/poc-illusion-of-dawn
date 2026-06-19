@@ -50,6 +50,10 @@ export class CharacterSelectScene extends Phaser.Scene {
   private selected = 0;
   private cards: Phaser.GameObjects.Container[] = [];
   private confirmBlink!: Phaser.GameObjects.Text;
+  // Gamepad just-pressed state
+  private padLeft  = false;
+  private padRight = false;
+  private padA     = false;
 
   constructor() { super({ key: 'CharacterSelectScene' }); }
 
@@ -114,7 +118,7 @@ export class CharacterSelectScene extends Phaser.Scene {
     this.refreshSelection();
 
     // ── Confirm text ────────────────────────────────────────────────
-    this.confirmBlink = this.add.text(W / 2, 570, 'ENTER ou CLIQUE para começar', {
+    this.confirmBlink = this.add.text(W / 2, 570, 'ENTER / A para começar', {
       fontSize: '14px', color: '#ffffff',
       fontFamily: 'monospace', stroke: '#000000', strokeThickness: 3
     }).setOrigin(0.5);
@@ -125,7 +129,7 @@ export class CharacterSelectScene extends Phaser.Scene {
       duration: 600, yoyo: true, repeat: -1
     });
 
-    this.add.text(W / 2, 598, '← → Setas para selecionar', {
+    this.add.text(W / 2, 598, '← →  Setas / D-pad / Analógico para selecionar', {
       fontSize: '11px', color: '#667788', fontFamily: 'monospace'
     }).setOrigin(0.5);
 
@@ -137,6 +141,34 @@ export class CharacterSelectScene extends Phaser.Scene {
     kb.on('keydown-D',     () => { this.selected = Math.min(CHARS.length - 1, this.selected + 1); this.refreshSelection(); });
     kb.on('keydown-ENTER', () => this.startGame());
     kb.on('keydown-SPACE', () => this.startGame());
+  }
+
+  update(): void {
+    const pad = (this.input.gamepad as Phaser.Input.Gamepad.GamepadPlugin)?.getPad(0);
+    if (!pad) return;
+
+    // D-pad or left stick for navigation
+    const stickX = pad.leftStick?.x ?? 0;
+    const leftDown  = pad.buttons[14]?.pressed === true || stickX < -0.5;
+    const rightDown = pad.buttons[15]?.pressed === true || stickX >  0.5;
+    // A (0) or Start (9) to confirm
+    const aDown     = pad.buttons[0]?.pressed  === true || pad.buttons[9]?.pressed === true;
+
+    if (leftDown && !this.padLeft) {
+      this.selected = Math.max(0, this.selected - 1);
+      this.refreshSelection();
+    }
+    if (rightDown && !this.padRight) {
+      this.selected = Math.min(CHARS.length - 1, this.selected + 1);
+      this.refreshSelection();
+    }
+    if (aDown && !this.padA) {
+      this.startGame();
+    }
+
+    this.padLeft  = leftDown;
+    this.padRight = rightDown;
+    this.padA     = aDown;
   }
 
   private buildCard(container: Phaser.GameObjects.Container, char: CharDef, w: number, h: number): void {

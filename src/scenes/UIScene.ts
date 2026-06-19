@@ -94,7 +94,8 @@ export class UIScene extends Phaser.Scene {
     });
 
     // Controls
-    this.controlsText = this.add.text(4, this.scale.height - 18, 'MOVER: WASD/Setas  |  ATACAR: Z/Espaço  |  DEFENDER: X/Shift', {
+    this.controlsText = this.add.text(4, this.scale.height - 18,
+      'MOVER: WASD/🕹  |  ATACAR: Z/A  |  DEFENDER: X/🎮  |  ESPECIAL: Q/Y  |  REALIDADE: R/Select', {
       fontSize: '10px', color: '#888888',
       fontFamily: 'monospace'
     }).setScrollFactor(0).setDepth(100);
