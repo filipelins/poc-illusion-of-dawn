@@ -91,6 +91,42 @@ export class CastleScene extends Phaser.Scene {
     }
 
     this.cameras.main.fadeIn(400);
+
+    // Dark realm overlay when entering castle in the true reality
+    if (this.registry.get('darkRealm') === true) {
+      this.add.rectangle(INTERIOR_W / 2, INTERIOR_H / 2, INTERIOR_W, INTERIOR_H, 0x0a0008, 0.55)
+        .setDepth(50).setScrollFactor(0);
+      this.add.text(INTERIOR_W / 2, 40, '✦ REALIDADE VERDADEIRA ✦', {
+        fontSize: '9px', color: '#9944bb', fontFamily: 'monospace'
+      }).setOrigin(0.5).setDepth(201).setScrollFactor(0);
+    }
+
+    // Unlock parallel universe on first castle entry
+    if (!this.registry.get('realmUnlocked')) {
+      this.registry.set('realmUnlocked', true);
+      this.time.delayedCall(800, () => this.showRevelationHint());
+    }
+  }
+
+  private showRevelationHint(): void {
+    const lines = [
+      'A mente do Devorador pesa sobre este lugar...',
+      'Algo parece ilusório aqui.',
+      '[ R ]  Alternar Realidade',
+    ];
+    const colors = ['#cc88ff', '#aa66dd', '#ffdd44'];
+    let delay = 0;
+    lines.forEach((line, i) => {
+      const txt = this.add.text(INTERIOR_W / 2, INTERIOR_H / 2 - 20 + i * 18, line, {
+        fontSize: '10px', color: colors[i],
+        fontFamily: 'monospace', stroke: '#110022', strokeThickness: 3
+      }).setOrigin(0.5).setDepth(202).setScrollFactor(0).setAlpha(0);
+      this.time.delayedCall(delay, () => {
+        this.tweens.add({ targets: txt, alpha: 1, duration: 400 });
+        this.time.delayedCall(3200, () => this.tweens.add({ targets: txt, alpha: 0, duration: 600, onComplete: () => txt.destroy() }));
+      });
+      delay += 700;
+    });
   }
 
   update(_t: number, delta: number): void {

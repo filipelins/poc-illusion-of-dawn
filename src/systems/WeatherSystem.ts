@@ -39,6 +39,21 @@ export class WeatherSystem {
     this.overlay?.destroy();
   }
 
+  suppress(active: boolean): void {
+    if (active) {
+      this.emitter?.destroy();
+      this.emitter = null;
+      if (this.overlay) {
+        this.scene.tweens.add({
+          targets: this.overlay, alpha: 0, duration: 600,
+          onComplete: () => { this.overlay?.destroy(); this.overlay = null; }
+        });
+      }
+    } else if (this.current !== 'sunny') {
+      this.apply(this.current, true);
+    }
+  }
+
   private roll(): number {
     return DURATION_MIN + Math.random() * (DURATION_MAX - DURATION_MIN);
   }

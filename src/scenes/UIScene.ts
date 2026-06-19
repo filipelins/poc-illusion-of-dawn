@@ -10,6 +10,9 @@ export class UIScene extends Phaser.Scene {
   private specialReady!: Phaser.GameObjects.Text;
   private realmOverlay!: Phaser.GameObjects.Rectangle;
   private realmActiveText!: Phaser.GameObjects.Text;
+  private darkVignette!: Phaser.GameObjects.Rectangle;
+  private darkBanner!: Phaser.GameObjects.Text;
+  private darkBannerTimer: ReturnType<typeof setTimeout> | null = null;
   private bossBar!: Phaser.GameObjects.Graphics;
   private bossNameTxt!: Phaser.GameObjects.Text;
   private bossPhaseTxt!: Phaser.GameObjects.Text;
@@ -63,6 +66,17 @@ export class UIScene extends Phaser.Scene {
       targets: this.specialReady,
       alpha: { from: 1, to: 0.3 }, duration: 400, yoyo: true, repeat: -1
     });
+
+    // Dark realm vignette (parallel universe — depth 92, below boss/cleric overlays)
+    this.darkVignette = this.add.rectangle(this.scale.width / 2, this.scale.height / 2, this.scale.width, this.scale.height, 0x08000e)
+      .setScrollFactor(0).setDepth(92).setAlpha(0);
+    if (this.registry.get('darkRealm') === true) this.darkVignette.setAlpha(0.48);
+
+    // Dark realm banner (shown briefly on toggle)
+    this.darkBanner = this.add.text(this.scale.width / 2, this.scale.height / 2 + 30, '', {
+      fontSize: '14px', color: '#cc88ff',
+      fontFamily: 'monospace', stroke: '#110022', strokeThickness: 4
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(103).setAlpha(0).setVisible(false);
 
     // Cleric realm overlay (full-screen purple tint, depth below UI)
     this.realmOverlay = this.add.rectangle(this.scale.width / 2, this.scale.height / 2, this.scale.width, this.scale.height, 0x6600cc)
@@ -206,6 +220,27 @@ export class UIScene extends Phaser.Scene {
     }
     if (key === 'bossPhase' && value === 2) {
       this.bossPhaseTxt.setText('FASE II').setColor('#ff2255');
+    }
+
+    if (key === 'darkRealm') {
+      const entering = value === true;
+      this.tweens.killTweensOf(this.darkVignette);
+      this.tweens.add({ targets: this.darkVignette, alpha: entering ? 0.48 : 0, duration: entering ? 700 : 500 });
+
+      const msg = entering ? '✦ REALIDADE VERDADEIRA ✦' : '✦ ILUSÃO RESTAURADA ✦';
+      this.darkBanner.setText(msg).setVisible(true).setAlpha(0);
+      this.tweens.killTweensOf(this.darkBanner);
+      this.tweens.add({
+        targets: this.darkBanner, alpha: 1, duration: 350,
+        onComplete: () => {
+          this.time.delayedCall(1400, () => {
+            this.tweens.add({
+              targets: this.darkBanner, alpha: 0, duration: 400,
+              onComplete: () => this.darkBanner.setVisible(false)
+            });
+          });
+        }
+      });
     }
 
     if (key === 'clericRealm') {

@@ -4,9 +4,9 @@ export type SFX =
   | 'swing' | 'hit' | 'enemyDie'
   | 'playerHurt' | 'playerDie'
   | 'special' | 'interact'
-  | 'bossRoar' | 'blocked' | 'victory';
+  | 'bossRoar' | 'blocked' | 'victory' | 'realmShift';
 
-export type MusicTheme = 'overworld' | 'boss' | 'castle';
+export type MusicTheme = 'overworld' | 'boss' | 'castle' | 'dark-realm';
 
 // ── Frequency table (scientific pitch notation) ──────────────────────────────
 
@@ -88,7 +88,29 @@ const CASTLE: Song = {
   ],
 };
 
-const SONGS: Record<MusicTheme, Song> = { overworld: OVERWORLD, boss: BOSS, castle: CASTLE };
+// Dark Realm — eerie, D minor, 66 BPM
+const DARK_REALM: Song = {
+  bpm: 66,
+  tracks: [
+    {
+      wave: 'sawtooth', vol: 0.09, len: 1.60,
+      steps: [
+        'D3','_','_','_','_','_','_','_','A2','_','_','_','_','_','_','_',
+        'F3','_','_','_','_','_','_','_','C3','_','_','_','Eb3','_','_','_',
+      ],
+    },
+    {
+      wave: 'triangle', vol: 0.11, len: 0.55,
+      steps: ['D4','_','_','F4','_','_','_','_','A3','_','_','Eb4','_','_','_','_'],
+    },
+    {
+      wave: 'sawtooth', vol: 0.04, len: 2.40,
+      steps: ['D2','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_'],
+    },
+  ],
+};
+
+const SONGS: Record<MusicTheme, Song> = { overworld: OVERWORLD, boss: BOSS, castle: CASTLE, 'dark-realm': DARK_REALM };
 
 // ── Step sequencer ───────────────────────────────────────────────────────────
 
@@ -208,6 +230,7 @@ export class AudioSystem {
       case 'bossRoar':   this.sfxBossRoar(t);   break;
       case 'blocked':    this.sfxBlocked(t);    break;
       case 'victory':    this.sfxVictory(t);    break;
+      case 'realmShift': this.sfxRealmShift(t); break;
     }
   }
 
@@ -298,5 +321,12 @@ export class AudioSystem {
       this.tone(t + i * 0.16, 'square', f, f, 0.28, 0.32);
     });
     this.tone(t + 0.64, 'square', 1047, 1047, 0.50, 0.38);
+  }
+
+  private sfxRealmShift(t: number): void {
+    this.tone(t,       'sawtooth', 800,  80,  0.70, 0.42);
+    this.tone(t+0.04,  'sawtooth', 600,  55,  0.55, 0.28);
+    this.noise(t,      0.14, 0.38);
+    this.tone(t+0.30,  'sawtooth', 55,   38,  0.50, 0.18);
   }
 }

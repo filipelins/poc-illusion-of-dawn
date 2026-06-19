@@ -248,6 +248,15 @@ export const BOSS_TELEPORT_CD    = 7000;
 export const BOSS_WINDUP_DUR     = 700;
 export const BOSS_CONTACT_DIST   = 1.1;
 
+// ── Villager NPC ───────────────────────────────────────────────────
+export const VILLAGER_COUNT        = 10;
+export const VILLAGER_HP           = 3;
+export const VILLAGER_SPEED        = 0.8;
+export const VILLAGER_DAMAGE       = 1;
+export const VILLAGER_RADIUS       = 0.30;
+export const VILLAGER_WANDER_INT   = 3000;
+export const VILLAGER_DETECT_RANGE = 5.0;
+
 // ── Cleric ─────────────────────────────────────────────────────────
 export const CLERIC_MAX_HP       = 8;
 export const CLERIC_SPEED        = 4.0;

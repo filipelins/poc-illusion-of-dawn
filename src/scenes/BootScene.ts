@@ -45,6 +45,13 @@ export class BootScene extends Phaser.Scene {
     this.makeSnowFlake();
     this.makeCastleWall();
     this.makeCastleDoor();
+    // Dark realm tile variants
+    this.makeDarkWall();
+    this.makeDarkHouseWall();
+    this.makeDarkBush();
+    this.makeDarkPath();
+    // NPC sprites
+    this.makeVillagerSprites();
     this.scene.start('CharacterSelectScene');
   }
 
@@ -971,6 +978,155 @@ export class BootScene extends Phaser.Scene {
     gr.fillRect(10, 32, 1, 8); gr.fillRect(23, 32, 1, 8);
     gr.generateTexture('tile-castle-wall', 32, 40);
     gr.destroy();
+  }
+
+  // ── Dark realm tile variants ──────────────────────────────────────────
+
+  private makeDarkWall(): void {
+    const gr = this.g();
+    // Top face — dark purple-gray stone
+    gr.fillStyle(0x2a1e32); gr.fillRect(0, 0, 32, 32);
+    gr.fillStyle(0x3a2a42);
+    gr.fillRect(2, 4, 6, 3); gr.fillRect(16, 3, 7, 3); gr.fillRect(22, 19, 6, 4);
+    // Cracks
+    gr.fillStyle(0x140c1a);
+    gr.fillRect(5, 8, 1, 10); gr.fillRect(18, 5, 1, 14);
+    gr.fillRect(10, 18, 8, 1); gr.fillRect(2, 25, 6, 1);
+    // Shadow rim
+    gr.fillStyle(0x0e0814); gr.fillRect(0, 30, 32, 2);
+    // South face — deep purple-black cliff
+    gr.fillStyle(0x261830); gr.fillRect(0, 32, 32, 8);
+    gr.fillStyle(0x382248); gr.fillRect(0, 32, 32, 2);
+    gr.fillStyle(0x140c1e); gr.fillRect(0, 37, 32, 3);
+    gr.fillStyle(0x2a1a3a);
+    gr.fillRect(0, 34, 9, 1); gr.fillRect(14, 34, 12, 1);
+    gr.fillRect(9, 32, 1, 8); gr.fillRect(22, 32, 1, 8);
+    gr.generateTexture('tile-wall-dark', 32, 40);
+    gr.destroy();
+  }
+
+  private makeDarkHouseWall(): void {
+    const gr = this.g();
+    // Top face — crumbled dark stone
+    gr.fillStyle(0x2e1e28); gr.fillRect(0, 0, 32, 32);
+    // Remaining brick fragments
+    gr.fillStyle(0x3e2a38);
+    gr.fillRect(0, 6, 10, 4); gr.fillRect(14, 2, 8, 5);
+    gr.fillRect(24, 10, 7, 4); gr.fillRect(2, 18, 9, 4);
+    gr.fillRect(16, 20, 10, 4); gr.fillRect(4, 27, 7, 3);
+    // Mortar cracks (dark)
+    gr.fillStyle(0x12080e);
+    gr.fillRect(0, 10, 32, 1); gr.fillRect(0, 22, 32, 1);
+    gr.fillRect(10, 0, 1, 10); gr.fillRect(22, 0, 1, 10);
+    gr.fillRect(6, 11, 1, 11); gr.fillRect(20, 11, 1, 11);
+    // Holes (complete breaks in the wall)
+    gr.fillStyle(0x060408);
+    gr.fillRect(11, 3, 3, 7); gr.fillRect(25, 13, 5, 8); gr.fillRect(0, 23, 4, 8);
+    // South face — near-black ruin
+    gr.fillStyle(0x180e18); gr.fillRect(0, 32, 32, 8);
+    gr.fillStyle(0x2a1828); gr.fillRect(0, 32, 32, 2);
+    gr.fillStyle(0x100808); gr.fillRect(10, 33, 1, 7); gr.fillRect(22, 33, 1, 7);
+    gr.generateTexture('tile-house-wall-dark', 32, 40);
+    gr.destroy();
+  }
+
+  private makeDarkBush(): void {
+    const gr = this.g();
+    // Dark dead ground
+    gr.fillStyle(0x1a1210); gr.fillRect(0, 0, 32, 32);
+    // Withered twigs
+    gr.fillStyle(0x2e1e14);
+    gr.fillRect(8, 12, 16, 3); gr.fillRect(13, 6, 3, 18);
+    gr.fillRect(6, 16, 4, 2); gr.fillRect(22, 14, 4, 2);
+    gr.fillRect(9, 8, 4, 2); gr.fillRect(19, 8, 4, 2);
+    gr.fillStyle(0x221610);
+    gr.fillRect(10, 13, 12, 1); gr.fillRect(14, 7, 1, 11);
+    // Dead leaves (sparse purple-gray dots)
+    gr.fillStyle(0x3a2844, 0.7);
+    gr.fillRect(7, 10, 3, 3); gr.fillRect(22, 12, 3, 3);
+    gr.fillRect(14, 6, 3, 3); gr.fillRect(18, 18, 3, 3);
+    gr.fillRect(9, 20, 3, 3); gr.fillRect(23, 7, 2, 2);
+    gr.generateTexture('tile-bush-dark', 32, 32);
+    gr.destroy();
+  }
+
+  private makeDarkPath(): void {
+    const gr = this.g();
+    // Very dark earth
+    gr.fillStyle(0x1a1008); gr.fillRect(0, 0, 32, 32);
+    // Dark patches
+    gr.fillStyle(0x241808);
+    gr.fillRect(2, 2, 10, 5); gr.fillRect(18, 6, 8, 4);
+    gr.fillRect(5, 14, 12, 4); gr.fillRect(20, 18, 8, 5);
+    gr.fillRect(2, 24, 9, 5); gr.fillRect(14, 26, 10, 4);
+    // Cracks (near-black lines)
+    gr.fillStyle(0x060402);
+    gr.fillRect(0, 7, 32, 1); gr.fillRect(0, 19, 32, 1);
+    gr.fillRect(7, 0, 1, 7); gr.fillRect(20, 7, 1, 12); gr.fillRect(13, 19, 1, 13);
+    gr.fillRect(25, 0, 1, 19);
+    // Purple mist speckles
+    gr.fillStyle(0x2a1a38, 0.6);
+    gr.fillRect(4, 4, 2, 2); gr.fillRect(22, 2, 2, 2);
+    gr.fillRect(10, 15, 2, 2); gr.fillRect(26, 13, 2, 2);
+    gr.fillRect(6, 27, 2, 2); gr.fillRect(18, 25, 2, 2);
+    gr.generateTexture('tile-path-dark', 32, 32);
+    gr.destroy();
+  }
+
+  // ── Villager NPC sprites — 18×26 ──────────────────────────────────────
+
+  private makeVillagerSprites(): void {
+    // Happy: colorful peasant (blue tunic, dark pants)
+    const gh = this.g();
+    gh.fillStyle(0x000000, 0.25); gh.fillEllipse(9, 25, 14, 4); // shadow
+    gh.fillStyle(0x5a3820); gh.fillRect(3, 20, 5, 5); gh.fillRect(10, 20, 5, 5); // boots
+    gh.fillStyle(0x6a4a2a); gh.fillRect(3, 14, 5, 7); gh.fillRect(10, 14, 5, 7); // pants
+    gh.fillStyle(0x2a5a9a); gh.fillRect(1, 8, 16, 8); // tunic
+    gh.fillStyle(0x1a4a8a); gh.fillRect(1, 13, 16, 2); // belt line
+    gh.fillStyle(0x2a5a9a); gh.fillRect(0, 8, 2, 7); gh.fillRect(16, 8, 2, 7); // arms
+    gh.fillStyle(0xf0c878); gh.fillRect(0, 14, 2, 4); gh.fillRect(16, 14, 2, 4); // hands
+    gh.fillStyle(0xf0c878); gh.fillRect(6, 3, 6, 6); // face
+    gh.fillStyle(0x282828); gh.fillRect(7, 6, 1, 1); gh.fillRect(10, 6, 1, 1); // eyes
+    gh.fillStyle(0x884422); gh.fillRect(5, 0, 8, 4); // hair
+    gh.fillStyle(0x9a5530); gh.fillRect(5, 0, 8, 2);
+    gh.generateTexture('npc-happy', 18, 26);
+    gh.destroy();
+
+    // Desperate: same person, desaturated / slumped
+    const gd = this.g();
+    gd.fillStyle(0x000000, 0.3); gd.fillEllipse(9, 25, 14, 4);
+    gd.fillStyle(0x3a2818); gd.fillRect(3, 20, 5, 5); gd.fillRect(10, 20, 5, 5);
+    gd.fillStyle(0x484038); gd.fillRect(3, 14, 5, 7); gd.fillRect(10, 14, 5, 7);
+    gd.fillStyle(0x384458); gd.fillRect(1, 8, 16, 8); // desaturated blue-gray
+    gd.fillStyle(0x283448); gd.fillRect(1, 13, 16, 2);
+    gd.fillStyle(0x384458); gd.fillRect(0, 8, 2, 7); gd.fillRect(16, 8, 2, 7);
+    gd.fillStyle(0xb09060); gd.fillRect(0, 14, 2, 4); gd.fillRect(16, 14, 2, 4);
+    gd.fillStyle(0xb09060); gd.fillRect(6, 4, 6, 6); // face, shifted down (slumped)
+    gd.fillStyle(0x181818); gd.fillRect(7, 7, 1, 1); gd.fillRect(10, 7, 1, 1); // dim eyes
+    gd.fillStyle(0x482818); gd.fillRect(5, 0, 8, 5); // hair, dull
+    // Tear mark
+    gd.fillStyle(0x6688aa, 0.8); gd.fillRect(7, 8, 1, 3);
+    gd.generateTexture('npc-desperate', 18, 26);
+    gd.destroy();
+
+    // Aggro: corrupted, dark clothes, glowing red eyes
+    const ga = this.g();
+    ga.fillStyle(0x000000, 0.4); ga.fillEllipse(9, 25, 14, 4);
+    ga.fillStyle(0x1a0a0a); ga.fillRect(3, 20, 5, 5); ga.fillRect(10, 20, 5, 5);
+    ga.fillStyle(0x120808); ga.fillRect(3, 14, 5, 7); ga.fillRect(10, 14, 5, 7);
+    ga.fillStyle(0x2a1020); ga.fillRect(1, 8, 16, 8); // dark corrupted tunic
+    ga.fillStyle(0x1a0814); ga.fillRect(1, 13, 16, 2);
+    ga.fillStyle(0x2a1020); ga.fillRect(0, 8, 2, 7); ga.fillRect(16, 8, 2, 7);
+    ga.fillStyle(0x8a6040); ga.fillRect(0, 14, 2, 4); ga.fillRect(16, 14, 2, 4);
+    // Dark aura glow
+    ga.fillStyle(0x440022, 0.4); ga.fillEllipse(9, 12, 20, 22);
+    ga.fillStyle(0x6a3840); ga.fillRect(6, 3, 6, 6); // face
+    // Glowing red eyes
+    ga.fillStyle(0xff0000); ga.fillRect(7, 5, 2, 2); ga.fillRect(10, 5, 2, 2);
+    ga.fillStyle(0xff6666); ga.fillRect(7, 5, 1, 1); ga.fillRect(10, 5, 1, 1);
+    ga.fillStyle(0x1a0814); ga.fillRect(5, 0, 8, 4); // dark hair
+    ga.generateTexture('npc-aggro', 18, 26);
+    ga.destroy();
   }
 
   // ── Castle door floor 32×32 (shadowed threshold) ─────────────────────
