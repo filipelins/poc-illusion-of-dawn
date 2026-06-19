@@ -445,7 +445,7 @@ export class GameScene extends Phaser.Scene {
 
   private showBlocked(sx: number, sy: number): void {
     getAudio(this)?.playEffect('blocked');
-    const txt = this.add.text(sx, sy - 20, 'BLOCKED!', {
+    const txt = this.add.text(sx, sy - 20, 'BLOQUEADO!', {
       fontSize: '12px', color: '#44ddff',
       fontFamily: 'monospace', stroke: '#001133', strokeThickness: 3
     }).setDepth(99).setOrigin(0.5);

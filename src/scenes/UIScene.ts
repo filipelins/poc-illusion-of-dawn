@@ -30,12 +30,12 @@ export class UIScene extends Phaser.Scene {
     }
 
     // Status labels
-    this.defendText = this.add.text(8, 36, '🛡 DEFENDING', {
+    this.defendText = this.add.text(8, 36, '🛡 DEFENDENDO', {
       fontSize: '11px', color: '#44ddff',
       fontFamily: 'monospace', stroke: '#003355', strokeThickness: 3
     }).setScrollFactor(0).setDepth(100).setVisible(false);
 
-    this.attackText = this.add.text(8, 36, '⚔ ATTACKING', {
+    this.attackText = this.add.text(8, 36, '⚔ ATACANDO', {
       fontSize: '11px', color: '#ffdd44',
       fontFamily: 'monospace', stroke: '#553300', strokeThickness: 3
     }).setScrollFactor(0).setDepth(100).setVisible(false);
@@ -43,8 +43,8 @@ export class UIScene extends Phaser.Scene {
     // Special bar (Bard / Cleric — hidden by default)
     const selectedChar = this.registry.get('selectedChar') as string;
     const isCleric = selectedChar === 'cleric';
-    const labelText  = isCleric ? 'Q REALM'   : 'Q SPECIAL';
-    const readyText  = isCleric ? '⚡ Q READY!' : '✦ Q READY!';
+    const labelText  = isCleric ? 'Q REINO'   : 'Q ESPECIAL';
+    const readyText  = isCleric ? '⚡ Q PRONTO!' : '✦ Q PRONTO!';
     const readyColor = isCleric ? '#aaddff'    : '#ffdd44';
     const readyStroke = isCleric ? '#001133'   : '#332200';
 
@@ -69,7 +69,7 @@ export class UIScene extends Phaser.Scene {
       .setScrollFactor(0).setDepth(94).setAlpha(0);
 
     // Realm active label (center screen)
-    this.realmActiveText = this.add.text(this.scale.width / 2, this.scale.height / 2 - 20, '✦ DIVINE REALM ✦', {
+    this.realmActiveText = this.add.text(this.scale.width / 2, this.scale.height / 2 - 20, '✦ REINO DIVINO ✦', {
       fontSize: '22px', color: '#ccddff',
       fontFamily: 'monospace', stroke: '#220066', strokeThickness: 5
     }).setOrigin(0.5).setScrollFactor(0).setDepth(101).setVisible(false);
@@ -80,13 +80,13 @@ export class UIScene extends Phaser.Scene {
     });
 
     // Controls
-    this.controlsText = this.add.text(4, this.scale.height - 18, 'MOVE: WASD/Arrows  |  ATTACK: Z/Space  |  DEFEND: X/Shift', {
+    this.controlsText = this.add.text(4, this.scale.height - 18, 'MOVER: WASD/Setas  |  ATACAR: Z/Espaço  |  DEFENDER: X/Shift', {
       fontSize: '10px', color: '#888888',
       fontFamily: 'monospace'
     }).setScrollFactor(0).setDepth(100);
 
     // Enemy legend
-    this.add.text(this.scale.width - 120, 8, 'Slime  Skel  Wizard', {
+    this.add.text(this.scale.width - 120, 8, 'Slime  Esq.  Mago', {
       fontSize: '9px', color: '#aaaaaa', fontFamily: 'monospace'
     }).setScrollFactor(0).setDepth(100);
 

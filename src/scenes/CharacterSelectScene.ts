@@ -16,9 +16,9 @@ interface CharDef {
 const CHARS: CharDef[] = [
   {
     id: 'knight',
-    name: 'KNIGHT',
+    name: 'GUERREIRO',
     spriteTex: 'player-down',
-    desc: ['Veteran warrior armed with', 'sword and shield.', '"Strike first, stand firm."'],
+    desc: ['Guerreiro veterano armado com', 'espada e escudo.', '"Ataque primeiro, mantenha-se firme."'],
     hp: 10, atk: 8, spd: 5,
     special: null,
     cardColor: 0x1a2a4a,
@@ -26,21 +26,21 @@ const CHARS: CharDef[] = [
   },
   {
     id: 'bard',
-    name: 'BARD',
+    name: 'BARDO',
     spriteTex: 'bard-down',
-    desc: ['Melodic fighter who channels', 'music into magic.', '"The song never ends."'],
+    desc: ['Lutador melódico que canaliza', 'música em magia.', '"A canção nunca acaba."'],
     hp: 7, atk: 5, spd: 8,
-    special: 'Q — Musical Note Burst',
+    special: 'Q — Explosão de Notas Musicais',
     cardColor: 0x2a1a3a,
     accentColor: 0xffdd44,
   },
   {
     id: 'cleric',
-    name: 'CLERIC',
+    name: 'CLÉRIGO',
     spriteTex: 'cleric-down',
-    desc: ['Holy mage hurling divine bolts.', 'Q tears reality open:', '"Double damage for 2 seconds."'],
-    hp: 80, atk: 60, spd: 16,
-    special: 'Q — Divine Realm (2s ×2 DMG)',
+    desc: ['Mago sagrado que arremessa raios divinos.', 'Q rasga a realidade:', '"Dano duplo por 2 segundos."'],
+    hp: 8, atk: 5, spd: 4,
+    special: 'Q — Reino Divino (2s ×2 DMG)',
     cardColor: 0x1a1a30,
     accentColor: 0xaaddff,
   },
@@ -75,7 +75,7 @@ export class CharacterSelectScene extends Phaser.Scene {
       fontFamily: 'monospace', stroke: '#442200', strokeThickness: 4
     }).setOrigin(0.5);
 
-    this.add.text(W / 2, 72, '— Choose Your Hero —', {
+    this.add.text(W / 2, 72, '— Escolha Seu Herói —', {
       fontSize: '14px', color: '#aabbcc',
       fontFamily: 'monospace'
     }).setOrigin(0.5);
@@ -114,7 +114,7 @@ export class CharacterSelectScene extends Phaser.Scene {
     this.refreshSelection();
 
     // ── Confirm text ────────────────────────────────────────────────
-    this.confirmBlink = this.add.text(W / 2, 570, 'ENTER or CLICK to start', {
+    this.confirmBlink = this.add.text(W / 2, 570, 'ENTER ou CLIQUE para começar', {
       fontSize: '14px', color: '#ffffff',
       fontFamily: 'monospace', stroke: '#000000', strokeThickness: 3
     }).setOrigin(0.5);
@@ -125,7 +125,7 @@ export class CharacterSelectScene extends Phaser.Scene {
       duration: 600, yoyo: true, repeat: -1
     });
 
-    this.add.text(W / 2, 598, '← → Arrow Keys to select', {
+    this.add.text(W / 2, 598, '← → Setas para selecionar', {
       fontSize: '11px', color: '#667788', fontFamily: 'monospace'
     }).setOrigin(0.5);
 
@@ -202,7 +202,7 @@ export class CharacterSelectScene extends Phaser.Scene {
       );
     } else {
       container.add(
-        this.add.text(w / 2, 267, '— No special ability —', {
+        this.add.text(w / 2, 267, '— Sem habilidade especial —', {
           fontSize: '10px', color: '#445566', fontFamily: 'monospace'
         }).setOrigin(0.5)
       );
