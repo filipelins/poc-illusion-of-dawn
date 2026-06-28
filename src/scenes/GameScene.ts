@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import {
-  TILE_SIZE, MAP_COLS, MAP_ROWS,
-  WORLD_W, WORLD_H, CONTACT_RADIUS, SOLID_TILES,
+  TILE_SIZE, MAP_COLS, MAP_ROWS, MAP_DATA,
+  WORLD_W, WORLD_H, CONTACT_RADIUS,
   BOSS_CONTACT_DIST, CASTLE_DOOR_WX, CASTLE_DOOR_WY,
   VILLAGER_COUNT,
 } from '../constants';
@@ -16,6 +16,7 @@ import { Wizard }   from '../entities/Wizard';
 import { Villager } from '../entities/Villager';
 import type { BaseEnemy } from '../entities/BaseEnemy';
 import { WeatherSystem } from '../systems/WeatherSystem';
+import { loadSave } from '../systems/SaveSystem';
 import { GRASS_SURFACE, CLIFF_FACE } from '../config/TilesetGrass';
 
 type TileRef = { img: Phaser.GameObjects.Image; lightTex: string; darkTex: string };
@@ -28,7 +29,9 @@ const DARK_TEX: Record<string, string> = {
 };
 
 export class GameScene extends Phaser.Scene {
-  private mapData: number[][] = [];
+  private mapData:       number[][] = [];
+  private decorData:     number[][] = [];
+  private collisionData: number[][] = [];
   private player!: BasePlayer;
   private enemies:  BaseEnemy[] = [];
   private wizards:  Wizard[]    = [];
@@ -42,6 +45,9 @@ export class GameScene extends Phaser.Scene {
   private realmUnlocked     = false;
   private realmTransitioning = false;
   private realmKey!: Phaser.Input.Keyboard.Key;
+  private pauseKey!: Phaser.Input.Keyboard.Key;
+  private gamePaused = false;
+  private padStartPrev = false;
 
   private weather!: WeatherSystem;
 
@@ -54,23 +60,44 @@ export class GameScene extends Phaser.Scene {
   private padInteractPrev = false;
   private padRealmPrev    = false;
 
+  // Kill counter
+  private killsCount = 0;
+
+  // Footprints (dark realm)
+  private footTrail: Phaser.GameObjects.Particles.ParticleEmitter | null = null;
+
+  // Dialogue
+  private dialogueText: Phaser.GameObjects.Text | null = null;
+  private dialogueCooldown = 0;
+
   constructor() { super({ key: 'GameScene' }); }
 
   create(): void {
     this.enemies   = [];
     this.wizards   = [];
     this.villagers = [];
-    this.tileRefs  = [];
+    this.tileRefs      = [];
+    this.decorData     = [];
+    this.collisionData = [];
     this.boss      = null;
     this.bossSpawned = false;
     this.realmTransitioning = false;
 
+    // Load persisted flags (realm unlock persists across sessions)
+    const save = loadSave();
+    if (save.realmUnlocked && !this.registry.get('realmUnlocked')) {
+      this.registry.set('realmUnlocked', true);
+    }
+
     this.darkRealm     = this.registry.get('darkRealm')     === true;
     this.realmUnlocked = this.registry.get('realmUnlocked') === true;
 
-    this.mapData = this.loadMapData();
-    setCurrentMap(this.mapData, MAP_COLS, MAP_ROWS);
+    this.mapData       = this.loadMapData();
+    this.decorData     = this.loadDecorData();
+    this.collisionData = this.loadCollisionData();
+    setCurrentMap(this.mapData, MAP_COLS, MAP_ROWS, this.collisionData);
     this.buildTileMap();
+    this.renderDecorLayer();
     this.player = createPlayer(this, 30.5, 6.5);
     this.spawnEnemies();
     this.spawnVillagers();
@@ -84,6 +111,11 @@ export class GameScene extends Phaser.Scene {
     this.interactKey = input.interactKey;
 
     this.realmKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.R);
+    this.pauseKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.P);
+
+    this.killsCount = 0;
+    this.registry.set('kills', 0);
+    this.registry.set('killsMax', 27);
 
     this.doorPrompt = this.add.text(0, 0, '[ E ]  Entrar no Castelo', {
       fontSize: '11px', color: '#ffeeaa',
@@ -126,12 +158,32 @@ export class GameScene extends Phaser.Scene {
   }
 
   update(_t: number, delta: number): void {
+    // Pause toggle (P or Start/button 9)
+    const pad0 = (this.input.gamepad as Phaser.Input.Gamepad.GamepadPlugin)?.getPad(0);
+    const startDown = pad0?.buttons[9]?.pressed === true;
+    const startJust = startDown && !this.padStartPrev;
+    this.padStartPrev = startDown;
+    if (Phaser.Input.Keyboard.JustDown(this.pauseKey) || startJust) {
+      this.gamePaused = !this.gamePaused;
+      this.registry.set('gamePaused', this.gamePaused);
+      if (this.gamePaused) {
+        this.weather.suppress(true);
+        this.scene.pause();
+        return;
+      }
+    }
+
     if (!this.darkRealm) this.weather.update(delta);
 
     this.player.update(this.cursors, this.attackKey, this.defendKey, this.specialKey, delta);
+    if (this.dialogueCooldown > 0) this.dialogueCooldown -= delta;
+
+    // Footprints in dark realm
+    if (this.footTrail) {
+      this.footTrail.setPosition(this.player.x, this.player.y + 8);
+    }
 
     // Realm toggle — R key or Back/Select (button 8)
-    const pad0 = (this.input.gamepad as Phaser.Input.Gamepad.GamepadPlugin)?.getPad(0);
     const padRealmDown = pad0?.buttons[8]?.pressed === true;
     const padRealmJust = padRealmDown && !this.padRealmPrev;
     this.padRealmPrev  = padRealmDown;
@@ -143,7 +195,12 @@ export class GameScene extends Phaser.Scene {
     // Enemies
     for (let i = this.enemies.length - 1; i >= 0; i--) {
       const e = this.enemies[i];
-      if (!e.active) { this.enemies.splice(i, 1); continue; }
+      if (!e.active) {
+        this.killsCount++;
+        this.registry.set('kills', this.killsCount);
+        this.enemies.splice(i, 1);
+        continue;
+      }
       e.update(this.player, delta);
       this.checkWeaponHit(e);
       this.checkMeleeContact(e);
@@ -183,9 +240,12 @@ export class GameScene extends Phaser.Scene {
     // Boss update & combat
     if (this.boss) {
       if (!this.boss.active) {
+        this.killsCount++;
+        this.registry.set('kills', this.killsCount);
         getAudio(this)?.playEffect('victory');
-        getAudio(this)?.playMusic(this.darkRealm ? 'dark-realm' : 'overworld');
         this.boss = null;
+        this.cameras.main.fade(1200, 0, 0, 0);
+        this.time.delayedCall(1300, () => this.scene.start('VictoryScene'));
       } else {
         this.boss.update(this.player, delta);
         this.checkWeaponHit(this.boss);
@@ -269,13 +329,43 @@ export class GameScene extends Phaser.Scene {
     // Castle door interaction
     const nearGate = worldDist(this.player.worldX, this.player.worldY, CASTLE_DOOR_WX, CASTLE_DOOR_WY) < 2.0;
     this.doorPrompt.setVisible(nearGate);
-    const pad = (this.input.gamepad as Phaser.Input.Gamepad.GamepadPlugin)?.getPad(0);
-    const bDown      = pad?.buttons[1]?.pressed === true;
+    const bDown      = pad0?.buttons[1]?.pressed === true;
     const padInteract = bDown && !this.padInteractPrev;
     this.padInteractPrev = bDown;
-    if (nearGate && (Phaser.Input.Keyboard.JustDown(this.interactKey) || padInteract)) {
+    const eJust = Phaser.Input.Keyboard.JustDown(this.interactKey) || padInteract;
+    if (nearGate && eJust) {
       this.enterCastle();
     }
+
+    // Villager dialogue
+    if (!nearGate && eJust && this.dialogueCooldown <= 0 && !this.darkRealm) {
+      for (const v of this.villagers) {
+        if (!v.isHappy()) continue;
+        if (worldDist(this.player.worldX, this.player.worldY, v.worldX, v.worldY) > 1.8) continue;
+        this.showDialogue(v.getDialogueLine());
+        this.dialogueCooldown = 3000;
+        break;
+      }
+    }
+  }
+
+  private showDialogue(line: string): void {
+    this.dialogueText?.destroy();
+    this.dialogueText = this.add.text(
+      this.scale.width / 2, this.scale.height - 96, `"${line}"`, {
+        fontSize: '11px', color: '#ffffff',
+        fontFamily: 'monospace', stroke: '#000000', strokeThickness: 3,
+        backgroundColor: '#00000099', padding: { x: 10, y: 6 },
+      }
+    ).setOrigin(0.5).setScrollFactor(0).setDepth(200);
+
+    this.time.delayedCall(2800, () => {
+      if (!this.dialogueText) return;
+      this.tweens.add({
+        targets: this.dialogueText, alpha: 0, duration: 400,
+        onComplete: () => { this.dialogueText?.destroy(); this.dialogueText = null; },
+      });
+    });
   }
 
   // ── TILE MAP ──────────────────────────────────────────────────────────
@@ -295,12 +385,47 @@ export class GameScene extends Phaser.Scene {
     const json = this.cache.json.get('map-data') as {
       layers: Array<{ data: number[]; name: string }>;
       width: number; height: number;
-    };
+    } | null;
+    if (!json) return MAP_DATA;
     const layer = json.layers.find(l => l.name === 'Ground')!;
     const flat  = layer.data;
     const data: number[][] = [];
     for (let r = 0; r < MAP_ROWS; r++)
       data.push(flat.slice(r * MAP_COLS, (r + 1) * MAP_COLS).map(id => id - 1));
+    return data;
+  }
+
+  private loadDecorData(): number[][] {
+    const empty = () => Array.from({ length: MAP_ROWS }, () => new Array(MAP_COLS).fill(0));
+    const json = this.cache.json.get('map-data') as {
+      layers: Array<{ data: number[]; name: string }>;
+      tilesets: Array<{ firstgid: number }>;
+    } | null;
+    if (!json) return empty();
+    const layer = json.layers.find(l => l.name === 'Decor');
+    if (!layer) return empty();
+    // firstgid do tileset visual — o maior firstgid no array (map.tsx vem depois de tileset-types)
+    const firstgid = Math.max(...json.tilesets.map(ts => ts.firstgid));
+    const data: number[][] = [];
+    for (let r = 0; r < MAP_ROWS; r++)
+      data.push(
+        layer.data.slice(r * MAP_COLS, (r + 1) * MAP_COLS)
+          .map(id => id === 0 ? 0 : id - firstgid)
+      );
+    return data;
+  }
+
+  private loadCollisionData(): number[][] {
+    const empty = Array.from({ length: MAP_ROWS }, () => new Array(MAP_COLS).fill(0));
+    const json = this.cache.json.get('map-data') as {
+      layers: Array<{ data: number[]; name: string }>;
+    } | null;
+    if (!json) return empty;
+    const layer = json.layers.find(l => l.name === 'Collision');
+    if (!layer) return empty;
+    const data: number[][] = [];
+    for (let r = 0; r < MAP_ROWS; r++)
+      data.push(layer.data.slice(r * MAP_COLS, (r + 1) * MAP_COLS));
     return data;
   }
 
@@ -314,12 +439,6 @@ export class GameScene extends Phaser.Scene {
   }
 
   private buildTileMap(): void {
-    let rngState = 42;
-    const rng = () => {
-      rngState = (rngState * 1664525 + 1013904223) & 0xffffffff;
-      return (rngState >>> 0) / 4294967296;
-    };
-
     for (let row = 0; row < MAP_ROWS; row++) {
       for (let col = 0; col < MAP_COLS; col++) {
         const x    = col * TILE_SIZE;
@@ -328,7 +447,6 @@ export class GameScene extends Phaser.Scene {
 
         if (type === 4) {
           this.add.image(x, y, 'tile-water').setOrigin(0, 0).setDepth(0).setAlpha(0.55);
-          rng(); rng(); rng();
           continue;
         }
 
@@ -348,36 +466,27 @@ export class GameScene extends Phaser.Scene {
           continue;
         }
 
-        // Floor tile — path has a dark variant
+        // Floor base — visuais de obstáculos vêm exclusivamente da layer Decor (PathAndObjects.png)
         const floorKey = this.floorTex(type, row, col);
         const floorImg = this.add.image(x, y, floorKey).setOrigin(0, 0).setDepth(0);
         if (type === 3) {
           this.tileRefs.push({ img: floorImg, lightTex: 'tile-path', darkTex: 'tile-path-dark' });
         }
+      }
+    }
+  }
 
-        // Obstacle tile
-        let topTex: string | null = null;
-        if      (type === 1 || type === 11) topTex = 'tile-wall';
-        else if (type === 2)                topTex = 'tile-bush';
-        else if (type === 9)                topTex = 'tile-tree';
-        else if (type === 10)               topTex = 'tile-cactus';
-        else if (type === 5)                topTex = 'tile-house-wall';
-        else if (type === 12)               topTex = 'tile-castle-wall';
-        else if (type === 13)               topTex = 'tile-castle-door';
-
-        if (topTex) {
-          const img = this.add.image(x, y, topTex).setOrigin(0, 0).setDepth(row + 0.1);
-          const darkTex = DARK_TEX[topTex];
-          if (darkTex) this.tileRefs.push({ img, lightTex: topTex, darkTex });
-        }
-
-        if ((type === 1 || type === 11) && rng() < 0.25) {
-          const rockKey = `raw-rock${Math.floor(rng() * 4) + 1}`;
-          const ox = Math.floor(rng() * 20) + 4;
-          const oy = Math.floor(rng() * 16) + 4;
-          this.add.image(x + ox, y + oy, rockKey)
-            .setDisplaySize(18, 18).setDepth(row + 0.5).setAlpha(0.92);
-        }
+  private renderDecorLayer(): void {
+    for (let row = 0; row < MAP_ROWS; row++) {
+      for (let col = 0; col < MAP_COLS; col++) {
+        const frame = this.decorData[row][col];
+        if (frame === 0) continue;
+        const x = col * TILE_SIZE;
+        const y = row * TILE_SIZE;
+        this.add.image(x, y, 'path-objects', frame)
+          .setOrigin(0, 0)
+          .setDisplaySize(TILE_SIZE, TILE_SIZE)
+          .setDepth(row + 0.1);
       }
     }
   }
@@ -390,7 +499,7 @@ export class GameScene extends Phaser.Scene {
       const pts: Array<[number, number]> = [];
       for (let r = 1; r < MAP_ROWS - 1; r++) {
         for (let c = 1; c < MAP_COLS - 1; c++) {
-          if (SOLID_TILES.has(this.mapData[r][c])) continue;
+          if (isWall(c + 0.5, r + 0.5)) continue;
           if (worldDist(c, r, px, py) < 4) continue;
           pts.push([c + 0.5, r + 0.5]);
         }
@@ -415,7 +524,7 @@ export class GameScene extends Phaser.Scene {
     // Village area: rows 3-20, cols 19-44 — walkable tiles only, far from player spawn
     for (let r = 3; r <= 20; r++) {
       for (let c = 19; c <= 44; c++) {
-        if (SOLID_TILES.has(this.mapData[r][c])) continue;
+        if (isWall(c + 0.5, r + 0.5)) continue;
         if (worldDist(c + 0.5, r + 0.5, 30.5, 6.5) < 3.5) continue;
         pts.push([c + 0.5, r + 0.5]);
       }
@@ -448,7 +557,30 @@ export class GameScene extends Phaser.Scene {
       for (const ref of this.tileRefs) {
         ref.img.setTexture(entering ? ref.darkTex : ref.lightTex);
       }
-      for (const v of this.villagers) v.setRealm(entering);
+      // Guarantee at least one aggro villager when entering dark realm
+      let hasAggro = false;
+      for (const v of this.villagers) {
+        v.setRealm(entering);
+        if (v.isAggro()) hasAggro = true;
+      }
+      if (entering && !hasAggro && this.villagers.length > 0) {
+        this.villagers[0].setRealm(true, true);
+      }
+
+      // Footprints
+      if (entering) {
+        this.footTrail = this.add.particles(this.player.x, this.player.y + 8, 'blank', {
+          speed: { min: 5, max: 20 },
+          scale: { start: 0.25, end: 0 },
+          tint: [0x551188, 0x220044],
+          alpha: { start: 0.6, end: 0 },
+          lifespan: 600, frequency: 120, quantity: 1,
+        }).setDepth(0.5);
+      } else {
+        this.footTrail?.destroy();
+        this.footTrail = null;
+      }
+
       this.weather.suppress(entering);
       getAudio(this)?.playMusic(entering ? 'dark-realm' : 'overworld');
       this.registry.set('darkRealm', entering);

@@ -12,9 +12,9 @@ function createWindow() {
     height: 800,
     minWidth: 1000,
     minHeight: 720,
-    fullscreen: !isDev,
+    fullscreen: true,
     title: 'Illusion of Dawn',
-    backgroundColor: '#0a0a0a',
+    backgroundColor: '#050812',
     autoHideMenuBar: true,
     webPreferences: {
       nodeIntegration: false,
@@ -24,16 +24,20 @@ function createWindow() {
 
   if (isDev) {
     win.loadURL('http://localhost:3000')
-    win.webContents.openDevTools()
   } else {
     win.loadFile(path.join(__dirname, '../dist/index.html'))
   }
 
-  // F11 toggles fullscreen; Escape exits fullscreen
+  // F11 toggles fullscreen; F12 toggles DevTools (dev only); Escape exits fullscreen
   win.webContents.on('before-input-event', (_event, input) => {
     if (input.type !== 'keyDown') return
     if (input.key === 'F11') {
       win.setFullScreen(!win.isFullScreen())
+    }
+    if (input.key === 'F12' && isDev) {
+      win.webContents.isDevToolsOpened()
+        ? win.webContents.closeDevTools()
+        : win.webContents.openDevTools()
     }
     if (input.key === 'Escape' && win.isFullScreen()) {
       win.setFullScreen(false)

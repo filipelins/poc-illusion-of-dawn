@@ -4,11 +4,13 @@ export class BootScene extends Phaser.Scene {
   constructor() { super({ key: 'BootScene' }); }
 
   preload(): void {
-    this.load.json('map-data', 'assets/map.json');
-    this.load.spritesheet('raw-tileset', 'assets/tileset-grass.png', { frameWidth: 64, frameHeight: 64 });
-    this.load.spritesheet('raw-tree',    'assets/tree.png',           { frameWidth: 192, frameHeight: 256 });
-    this.load.spritesheet('raw-bush',    'assets/bush.png',           { frameWidth: 128, frameHeight: 128 });
-    this.load.spritesheet('raw-wfoam',   'assets/water-foam.png',     { frameWidth: 192, frameHeight: 192 });
+    this.load.json('map-data',        'assets/map.json');
+    this.load.json('heavenbrock-data', 'assets/heavenbrock.json');
+    this.load.spritesheet('path-objects', 'assets/path-objects.png', { frameWidth: 32, frameHeight: 32 });
+    this.load.spritesheet('raw-tileset',   'assets/tileset-grass.png',  { frameWidth: 64,  frameHeight: 64  });
+    this.load.spritesheet('raw-tree',      'assets/tree.png',            { frameWidth: 192, frameHeight: 256 });
+    this.load.spritesheet('raw-bush',      'assets/bush.png',            { frameWidth: 128, frameHeight: 128 });
+    this.load.spritesheet('raw-wfoam',     'assets/water-foam.png',      { frameWidth: 192, frameHeight: 192 });
     this.load.image('raw-rock1', 'assets/rock1.png');
     this.load.image('raw-rock2', 'assets/rock2.png');
     this.load.image('raw-rock3', 'assets/rock3.png');
@@ -52,6 +54,8 @@ export class BootScene extends Phaser.Scene {
     this.makeDarkPath();
     // NPC sprites
     this.makeVillagerSprites();
+    // Portrait HUD
+    this.makePortraits();
     this.scene.start('CharacterSelectScene');
   }
 
@@ -1127,6 +1131,142 @@ export class BootScene extends Phaser.Scene {
     ga.fillStyle(0x1a0814); ga.fillRect(5, 0, 8, 4); // dark hair
     ga.generateTexture('npc-aggro', 18, 26);
     ga.destroy();
+  }
+
+  // ── Character portraits 44×44 (HUD top-left) ─────────────────────────
+
+  private makePortraits(): void {
+    this.makeKnightPortrait();
+    this.makeBardPortrait();
+    this.makeClericPortrait();
+  }
+
+  private makeKnightPortrait(): void {
+    const gr = this.g();
+    // Background
+    gr.fillStyle(0x0c1620); gr.fillRect(0, 0, 44, 44);
+    // Armor shoulders
+    gr.fillStyle(0x3a4a6a); gr.fillRect(0, 36, 44, 8);
+    gr.fillStyle(0x4a5a8a); gr.fillRect(4, 34, 36, 8);
+    gr.fillStyle(0x5a6a9a); gr.fillRect(8, 34, 28, 4);
+    // Neck
+    gr.fillStyle(0xf0c878); gr.fillRect(17, 28, 10, 8);
+    // Face base
+    gr.fillStyle(0xf0c878); gr.fillRect(10, 14, 24, 16);
+    // Cheek shading
+    gr.fillStyle(0xe0b060); gr.fillRect(10, 26, 5, 4); gr.fillRect(29, 26, 5, 4);
+    // Eyebrows
+    gr.fillStyle(0x5a3010); gr.fillRect(13, 19, 6, 2); gr.fillRect(25, 19, 6, 2);
+    // Eyes whites
+    gr.fillStyle(0xffffff); gr.fillRect(13, 21, 6, 5); gr.fillRect(25, 21, 6, 5);
+    // Pupils (green)
+    gr.fillStyle(0x2a8a30); gr.fillRect(15, 22, 3, 3); gr.fillRect(27, 22, 3, 3);
+    gr.fillStyle(0x111111); gr.fillRect(16, 23, 2, 2); gr.fillRect(28, 23, 2, 2);
+    gr.fillStyle(0xffffff); gr.fillRect(15, 22, 1, 1); gr.fillRect(27, 22, 1, 1);
+    // Nose
+    gr.fillStyle(0xd4a050); gr.fillRect(20, 26, 4, 3);
+    // Mouth / smile
+    gr.fillStyle(0xc47858); gr.fillRect(15, 30, 14, 2);
+    gr.fillStyle(0xa06040); gr.fillRect(17, 31, 10, 2);
+    // Hair — dark brown, visible on sides
+    gr.fillStyle(0x4a2a0a); gr.fillRect(8, 11, 28, 6);
+    gr.fillStyle(0x3a200a); gr.fillRect(8, 11, 3, 10); gr.fillRect(33, 11, 3, 10);
+    // Green knight hat
+    gr.fillStyle(0x1e5c1e); gr.fillRect(8, 0, 28, 4);
+    gr.fillStyle(0x267026); gr.fillRect(6, 3, 32, 9);
+    gr.fillStyle(0x3a9030); gr.fillRect(7, 4, 30, 3);
+    // Gold hat band
+    gr.fillStyle(0xddaa00); gr.fillRect(6, 11, 32, 3);
+    gr.fillStyle(0xffcc22); gr.fillRect(7, 11, 30, 1);
+    gr.generateTexture('portrait-knight', 44, 44);
+    gr.destroy();
+  }
+
+  private makeBardPortrait(): void {
+    const gr = this.g();
+    // Background
+    gr.fillStyle(0x180e08); gr.fillRect(0, 0, 44, 44);
+    // Vest shoulders
+    gr.fillStyle(0x881818); gr.fillRect(0, 36, 44, 8);
+    gr.fillStyle(0xaa2222); gr.fillRect(4, 33, 36, 8);
+    // Gold trim on collar
+    gr.fillStyle(0xdd8800); gr.fillRect(4, 33, 36, 2); gr.fillRect(4, 39, 36, 2);
+    // Neck
+    gr.fillStyle(0xf0c878); gr.fillRect(17, 28, 10, 8);
+    // Face
+    gr.fillStyle(0xf0c878); gr.fillRect(10, 14, 24, 16);
+    gr.fillStyle(0xe0b060); gr.fillRect(10, 26, 5, 4); gr.fillRect(29, 26, 5, 4);
+    // Eyebrows (slightly raised — playful)
+    gr.fillStyle(0x7a3818); gr.fillRect(12, 18, 7, 2); gr.fillRect(25, 18, 7, 2);
+    // Eyes whites
+    gr.fillStyle(0xffffff); gr.fillRect(13, 20, 6, 5); gr.fillRect(25, 20, 6, 5);
+    // Pupils (warm brown)
+    gr.fillStyle(0x8a4010); gr.fillRect(15, 21, 3, 3); gr.fillRect(27, 21, 3, 3);
+    gr.fillStyle(0x111111); gr.fillRect(16, 22, 2, 2); gr.fillRect(28, 22, 2, 2);
+    gr.fillStyle(0xffffff); gr.fillRect(15, 21, 1, 1); gr.fillRect(27, 21, 1, 1);
+    // Nose
+    gr.fillStyle(0xd4a050); gr.fillRect(20, 25, 4, 3);
+    // Wide smile
+    gr.fillStyle(0xc47858); gr.fillRect(14, 29, 16, 3);
+    gr.fillStyle(0xa06040); gr.fillRect(16, 31, 12, 2);
+    // Auburn hair
+    gr.fillStyle(0x8a3818); gr.fillRect(8, 12, 28, 5);
+    gr.fillStyle(0x6a2810); gr.fillRect(8, 12, 3, 10); gr.fillRect(33, 12, 3, 10);
+    // Red jester hat brim
+    gr.fillStyle(0xcc2222); gr.fillRect(5, 10, 34, 5);
+    gr.fillStyle(0xaa1818); gr.fillRect(7, 10, 30, 2);
+    // Hat top
+    gr.fillStyle(0xcc2222); gr.fillRect(8, 3, 24, 8);
+    gr.fillStyle(0xaa1818); gr.fillTriangle(10, 3, 30, 3, 20, -2);
+    // Yellow feather on right side of hat
+    gr.fillStyle(0xffee00); gr.fillRect(34, 0, 4, 12);
+    gr.fillStyle(0xffcc00); gr.fillRect(35, 1, 2, 10);
+    gr.fillStyle(0xff8800); gr.fillRect(33, 4, 5, 4);
+    gr.generateTexture('portrait-bard', 44, 44);
+    gr.destroy();
+  }
+
+  private makeClericPortrait(): void {
+    const gr = this.g();
+    // Background
+    gr.fillStyle(0x0c0c1e); gr.fillRect(0, 0, 44, 44);
+    // Robe shoulders
+    gr.fillStyle(0xf0e8d0); gr.fillRect(0, 34, 44, 10);
+    gr.fillStyle(0xe0d8c0); gr.fillRect(4, 34, 36, 8);
+    // Gold cross on robe
+    gr.fillStyle(0xddaa33); gr.fillRect(20, 35, 4, 9); gr.fillRect(14, 38, 16, 4);
+    // Neck
+    gr.fillStyle(0xf0c878); gr.fillRect(17, 28, 10, 8);
+    // Face
+    gr.fillStyle(0xf0c878); gr.fillRect(10, 14, 24, 16);
+    gr.fillStyle(0xe0b060); gr.fillRect(10, 26, 5, 4); gr.fillRect(29, 26, 5, 4);
+    // Eyebrows (calm, thin)
+    gr.fillStyle(0x6a4010); gr.fillRect(13, 20, 6, 1); gr.fillRect(25, 20, 6, 1);
+    // Eyes whites
+    gr.fillStyle(0xffffff); gr.fillRect(13, 22, 6, 5); gr.fillRect(25, 22, 6, 5);
+    // Pupils (light blue — divine)
+    gr.fillStyle(0x5599cc); gr.fillRect(15, 23, 3, 3); gr.fillRect(27, 23, 3, 3);
+    gr.fillStyle(0x1133aa); gr.fillRect(16, 24, 2, 2); gr.fillRect(28, 24, 2, 2);
+    gr.fillStyle(0xffffff); gr.fillRect(15, 23, 1, 1); gr.fillRect(27, 23, 1, 1);
+    // Nose
+    gr.fillStyle(0xd4a050); gr.fillRect(20, 27, 4, 3);
+    // Gentle smile
+    gr.fillStyle(0xc47858); gr.fillRect(16, 30, 12, 2);
+    gr.fillStyle(0xa06040); gr.fillRect(18, 31, 8, 1);
+    // Hair under hood
+    gr.fillStyle(0x7a5020); gr.fillRect(9, 12, 26, 4);
+    gr.fillStyle(0x5a3810); gr.fillRect(9, 12, 3, 8); gr.fillRect(32, 12, 3, 8);
+    // White hood (cream)
+    gr.fillStyle(0xf8f0e0); gr.fillRect(7, 0, 30, 14);
+    gr.fillStyle(0xe8e0cc); gr.fillRect(5, 7, 34, 7);
+    gr.fillStyle(0xd8d0bc); gr.fillRect(5, 12, 34, 3);
+    // Hood shadow inner
+    gr.fillStyle(0xc8c0ac); gr.fillRect(7, 13, 30, 2);
+    // Gold trim at hood bottom
+    gr.fillStyle(0xddaa33); gr.fillRect(5, 13, 34, 2);
+    gr.fillStyle(0xffcc44); gr.fillRect(6, 13, 32, 1);
+    gr.generateTexture('portrait-cleric', 44, 44);
+    gr.destroy();
   }
 
   // ── Castle door floor 32×32 (shadowed threshold) ─────────────────────

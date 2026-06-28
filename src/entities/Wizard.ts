@@ -24,6 +24,7 @@ export class Wizard extends BaseEnemy {
   }
 
   private shoot(player: Player): void {
+    if (this.projectiles.length >= 30) return;
     const dx = player.worldX - this.worldX;
     const dy = player.worldY - this.worldY;
     this.projectiles.push(new Projectile(this.scene, this.worldX, this.worldY - 0.5, dx, dy));

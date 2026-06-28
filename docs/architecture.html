@@ -1,0 +1,1216 @@
+<title>Arquitetura — Illusion of Dawn</title>
+<meta name="description" content="Documentação completa da arquitetura do projeto Illusion of Dawn: pastas, arquivos, cenas, entidades e sistemas explicados de forma simples.">
+
+<style>
+  :root {
+    --bg:           #0b0d11;
+    --surface:      #13161e;
+    --surface2:     #191d28;
+    --border:       #252b3a;
+    --border-light: #2e3547;
+    --text:         #bfc5d1;
+    --text-dim:     #57607a;
+    --text-bright:  #e2e6ef;
+    --accent:       #7b5fc0;
+    --accent-light: #9e82d4;
+    --accent-glow:  rgba(123,95,192,.15);
+    --gold:         #c9a84c;
+    --gold-dim:     rgba(201,168,76,.12);
+    --teal:         #3d9e8a;
+    --teal-dim:     rgba(61,158,138,.12);
+    --red:          #b04a4a;
+
+    --fs-xs:   .7rem;
+    --fs-sm:   .78rem;
+    --fs-base: .93rem;
+    --fs-md:   1.05rem;
+    --fs-lg:   1.3rem;
+    --fs-xl:   1.75rem;
+    --fs-2xl:  2.2rem;
+
+    --mono: 'Courier New', 'Courier', monospace;
+    --sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+    --sidebar: 220px;
+    --radius:  3px;
+    --gap:     1.5rem;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: var(--fs-base);
+    line-height: 1.7;
+    min-height: 100vh;
+    position: relative;
+  }
+
+  /* scanline overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      to bottom,
+      transparent,
+      transparent 3px,
+      rgba(0,0,0,.07) 3px,
+      rgba(0,0,0,.07) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* ── Layout ─────────────────────────────────────────── */
+
+  .layout {
+    display: flex;
+    min-height: 100vh;
+  }
+
+  /* ── Sidebar ─────────────────────────────────────────── */
+
+  .sidebar {
+    width: var(--sidebar);
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem 0 2rem;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  .sidebar-logo {
+    padding: 0 1.2rem 1.2rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 1rem;
+  }
+
+  .sidebar-logo .game-title {
+    font-family: var(--mono);
+    font-size: var(--fs-sm);
+    color: var(--accent-light);
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: .2rem;
+  }
+
+  .sidebar-logo .doc-label {
+    font-size: var(--fs-xs);
+    color: var(--text-dim);
+    letter-spacing: .06em;
+    text-transform: uppercase;
+  }
+
+  .nav-group {
+    padding: 0 .6rem;
+    margin-bottom: .5rem;
+  }
+
+  .nav-group-label {
+    font-family: var(--mono);
+    font-size: var(--fs-xs);
+    color: var(--text-dim);
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    padding: .6rem .6rem .3rem;
+    display: block;
+  }
+
+  .nav-link {
+    display: block;
+    padding: .32rem .6rem;
+    font-size: var(--fs-sm);
+    color: var(--text-dim);
+    text-decoration: none;
+    border-radius: var(--radius);
+    transition: color .15s, background .15s;
+    line-height: 1.4;
+  }
+
+  .nav-link:hover,
+  .nav-link.active {
+    color: var(--text-bright);
+    background: var(--surface2);
+  }
+
+  .nav-link.active {
+    color: var(--accent-light);
+    border-left: 2px solid var(--accent);
+    padding-left: calc(.6rem - 2px);
+  }
+
+  .nav-link:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+
+  /* ── Main ─────────────────────────────────────────────── */
+
+  .main {
+    flex: 1;
+    min-width: 0;
+    padding: 3rem 3.5rem 5rem;
+    max-width: 860px;
+  }
+
+  /* ── Hero ─────────────────────────────────────────────── */
+
+  .hero {
+    margin-bottom: 3.5rem;
+    padding-bottom: 2.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .hero-eyebrow {
+    font-family: var(--mono);
+    font-size: var(--fs-xs);
+    color: var(--accent-light);
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    margin-bottom: .7rem;
+    display: block;
+  }
+
+  .hero h1 {
+    font-size: var(--fs-2xl);
+    font-weight: 700;
+    color: var(--text-bright);
+    line-height: 1.15;
+    text-wrap: balance;
+    margin-bottom: .9rem;
+    letter-spacing: -.02em;
+  }
+
+  .hero-desc {
+    font-size: var(--fs-md);
+    color: var(--text-dim);
+    max-width: 52ch;
+    line-height: 1.6;
+  }
+
+  /* ── Sections ─────────────────────────────────────────── */
+
+  section {
+    margin-bottom: 4rem;
+    scroll-margin-top: 2rem;
+  }
+
+  .section-eyebrow {
+    font-family: var(--mono);
+    font-size: var(--fs-xs);
+    color: var(--text-dim);
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    margin-bottom: .5rem;
+    display: block;
+  }
+
+  h2 {
+    font-size: var(--fs-xl);
+    font-weight: 700;
+    color: var(--text-bright);
+    line-height: 1.2;
+    text-wrap: balance;
+    margin-bottom: 1.2rem;
+    letter-spacing: -.015em;
+  }
+
+  h3 {
+    font-size: var(--fs-lg);
+    font-weight: 600;
+    color: var(--text-bright);
+    margin-top: 2rem;
+    margin-bottom: .7rem;
+    text-wrap: balance;
+  }
+
+  h4 {
+    font-size: var(--fs-md);
+    font-weight: 600;
+    color: var(--accent-light);
+    margin-top: 1.4rem;
+    margin-bottom: .4rem;
+  }
+
+  p { margin-bottom: .9rem; }
+  p:last-child { margin-bottom: 0; }
+
+  a { color: var(--accent-light); }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+
+  /* ── Divider ─────────────────────────────────────────── */
+
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 2.5rem 0;
+  }
+
+  /* ── Pill tags ─────────────────────────────────────────── */
+
+  .pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    margin: 1rem 0;
+  }
+
+  .pill {
+    font-family: var(--mono);
+    font-size: var(--fs-xs);
+    letter-spacing: .06em;
+    padding: .25rem .7rem;
+    border-radius: 2px;
+    border: 1px solid var(--border-light);
+    color: var(--text-dim);
+    background: var(--surface2);
+  }
+
+  .pill.accent { border-color: var(--accent); color: var(--accent-light); background: var(--accent-glow); }
+  .pill.gold   { border-color: var(--gold);   color: var(--gold);         background: var(--gold-dim); }
+  .pill.teal   { border-color: var(--teal);   color: var(--teal);         background: var(--teal-dim); }
+
+  /* ── Flow diagram ─────────────────────────────────────── */
+
+  .flow {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0;
+    margin: 1.5rem 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem 1.2rem;
+    overflow-x: auto;
+  }
+
+  .flow-node {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .25rem;
+    flex-shrink: 0;
+  }
+
+  .flow-box {
+    background: var(--surface2);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius);
+    padding: .45rem .9rem;
+    font-size: var(--fs-sm);
+    color: var(--text-bright);
+    white-space: nowrap;
+    text-align: center;
+  }
+
+  .flow-box.highlight {
+    border-color: var(--accent);
+    color: var(--accent-light);
+    background: var(--accent-glow);
+  }
+
+  .flow-box.gold {
+    border-color: var(--gold);
+    color: var(--gold);
+    background: var(--gold-dim);
+  }
+
+  .flow-sub {
+    font-size: var(--fs-xs);
+    color: var(--text-dim);
+    font-family: var(--mono);
+    letter-spacing: .05em;
+    white-space: nowrap;
+  }
+
+  .flow-arrow {
+    font-size: 1rem;
+    color: var(--border-light);
+    flex-shrink: 0;
+    padding: 0 .4rem;
+    margin-bottom: 1.2rem;
+  }
+
+  .flow-fork {
+    display: flex;
+    flex-direction: column;
+    gap: .4rem;
+    flex-shrink: 0;
+  }
+
+  /* ── File tree ─────────────────────────────────────────── */
+
+  .file-tree {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.4rem 1.6rem;
+    font-family: var(--mono);
+    font-size: var(--fs-sm);
+    line-height: 2;
+    overflow-x: auto;
+  }
+
+  .file-tree .dir  { color: var(--accent-light); }
+  .file-tree .file { color: var(--text); }
+  .file-tree .dim  { color: var(--text-dim); }
+  .file-tree .gold { color: var(--gold); }
+  .file-tree .teal { color: var(--teal); }
+
+  /* ── Cards ─────────────────────────────────────────────── */
+
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+    margin: 1.2rem 0;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.1rem 1.2rem;
+    position: relative;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 2px;
+    height: 100%;
+    border-radius: var(--radius) 0 0 var(--radius);
+    background: var(--accent);
+  }
+
+  .card.gold::before  { background: var(--gold); }
+  .card.teal::before  { background: var(--teal); }
+  .card.dim::before   { background: var(--border-light); }
+
+  .card-title {
+    font-family: var(--mono);
+    font-size: var(--fs-sm);
+    color: var(--text-bright);
+    letter-spacing: .04em;
+    margin-bottom: .4rem;
+    display: flex;
+    align-items: baseline;
+    gap: .6rem;
+  }
+
+  .card-lines {
+    font-size: var(--fs-xs);
+    color: var(--text-dim);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .card p {
+    font-size: var(--fs-sm);
+    color: var(--text-dim);
+    line-height: 1.6;
+    margin-bottom: 0;
+  }
+
+  /* ── Entity tree ─────────────────────────────────────────── */
+
+  .entity-tree {
+    font-family: var(--mono);
+    font-size: var(--fs-sm);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.2rem 1.5rem;
+    line-height: 2;
+    overflow-x: auto;
+  }
+
+  .entity-tree .root  { color: var(--accent-light); font-weight: 700; }
+  .entity-tree .leaf  { color: var(--text); }
+  .entity-tree .attr  { color: var(--text-dim); margin-left: .4rem; }
+  .entity-tree .tree-dim { color: var(--border-light); }
+
+  /* ── Tables ─────────────────────────────────────────────── */
+
+  .table-wrap { overflow-x: auto; margin: 1rem 0; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--fs-sm);
+  }
+
+  th {
+    font-family: var(--mono);
+    font-size: var(--fs-xs);
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    text-align: left;
+    padding: .5rem .9rem;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border-light);
+    font-weight: 600;
+  }
+
+  td {
+    padding: .55rem .9rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+    line-height: 1.5;
+    color: var(--text);
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface); }
+
+  td:first-child {
+    font-family: var(--mono);
+    font-size: var(--fs-xs);
+    color: var(--accent-light);
+    white-space: nowrap;
+    letter-spacing: .03em;
+  }
+
+  /* ── Code ─────────────────────────────────────────────── */
+
+  code {
+    font-family: var(--mono);
+    font-size: .85em;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: .1em .35em;
+    border-radius: 2px;
+    color: var(--accent-light);
+  }
+
+  pre {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.2rem 1.4rem;
+    overflow-x: auto;
+    margin: 1rem 0;
+    font-family: var(--mono);
+    font-size: var(--fs-sm);
+    line-height: 1.8;
+    color: var(--text);
+  }
+
+  pre .cmd  { color: var(--gold); }
+  pre .cmt  { color: var(--text-dim); }
+  pre .key  { color: var(--accent-light); }
+
+  /* ── Callout ─────────────────────────────────────────── */
+
+  .callout {
+    background: var(--surface);
+    border-left: 3px solid var(--accent);
+    padding: .9rem 1.2rem;
+    border-radius: 0 var(--radius) var(--radius) 0;
+    margin: 1rem 0;
+    font-size: var(--fs-sm);
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+
+  .callout.gold { border-color: var(--gold); }
+  .callout strong { color: var(--text-bright); }
+
+  /* ── Rules grid ─────────────────────────────────────────── */
+
+  .rules-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 1rem;
+    margin-top: 1.2rem;
+  }
+
+  .rule-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem 1.2rem;
+    display: flex;
+    gap: .9rem;
+    align-items: flex-start;
+  }
+
+  .rule-number {
+    font-family: var(--mono);
+    font-size: 1.1rem;
+    color: var(--accent);
+    line-height: 1;
+    flex-shrink: 0;
+    font-weight: 700;
+    padding-top: .1rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .rule-card p {
+    font-size: var(--fs-sm);
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+
+  .rule-card strong { color: var(--text-bright); }
+
+  /* ── Comms diagram ─────────────────────────────────────── */
+
+  .comms {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: .8rem;
+    align-items: center;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.4rem;
+    margin: 1.2rem 0;
+    overflow-x: auto;
+  }
+
+  .comms-box {
+    background: var(--surface2);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius);
+    padding: .7rem 1rem;
+    text-align: center;
+  }
+
+  .comms-box .label {
+    font-family: var(--mono);
+    font-size: var(--fs-xs);
+    color: var(--text-bright);
+    letter-spacing: .05em;
+    display: block;
+    margin-bottom: .2rem;
+  }
+
+  .comms-box .sub {
+    font-size: var(--fs-xs);
+    color: var(--text-dim);
+  }
+
+  .comms-arrow {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .15rem;
+  }
+
+  .comms-arrow .arrow-label {
+    font-family: var(--mono);
+    font-size: var(--fs-xs);
+    color: var(--text-dim);
+    white-space: nowrap;
+  }
+
+  .comms-arrow .arrow-line {
+    font-size: 1.2rem;
+    color: var(--border-light);
+  }
+
+  /* ── Responsive ─────────────────────────────────────────── */
+
+  @media (max-width: 760px) {
+    .sidebar { display: none; }
+    .main { padding: 2rem 1.2rem 4rem; }
+    .hero h1 { font-size: 1.7rem; }
+    .flow { flex-direction: column; align-items: flex-start; }
+    .flow-arrow { transform: rotate(90deg); align-self: center; }
+    .rules-grid { grid-template-columns: 1fr; }
+    .comms { grid-template-columns: 1fr; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+  }
+</style>
+
+<div class="layout">
+
+  <!-- ── Sidebar ── -->
+  <nav class="sidebar" aria-label="Navegação">
+    <div class="sidebar-logo">
+      <span class="game-title">Illusion of Dawn</span>
+      <span class="doc-label">Arquitetura do projeto</span>
+    </div>
+
+    <div class="nav-group">
+      <span class="nav-group-label">Visão geral</span>
+      <a class="nav-link" href="#visao-geral">O que é</a>
+      <a class="nav-link" href="#estrutura">Estrutura de pastas</a>
+      <a class="nav-link" href="#fluxo">Fluxo do jogo</a>
+    </div>
+
+    <div class="nav-group">
+      <span class="nav-group-label">Código fonte</span>
+      <a class="nav-link" href="#entry">main.ts &amp; constants.ts</a>
+      <a class="nav-link" href="#scenes">Cenas</a>
+      <a class="nav-link" href="#entities">Entidades</a>
+      <a class="nav-link" href="#systems">Sistemas</a>
+      <a class="nav-link" href="#utils">Utilitários</a>
+    </div>
+
+    <div class="nav-group">
+      <span class="nav-group-label">Assets &amp; Ferramentas</span>
+      <a class="nav-link" href="#assets">public/assets</a>
+      <a class="nav-link" href="#tiled">Tiled</a>
+      <a class="nav-link" href="#electron">Electron &amp; Scripts</a>
+    </div>
+
+    <div class="nav-group">
+      <span class="nav-group-label">Referência</span>
+      <a class="nav-link" href="#comandos">Comandos</a>
+      <a class="nav-link" href="#comunicacao">Comunicação</a>
+      <a class="nav-link" href="#regras">Regras de ouro</a>
+    </div>
+  </nav>
+
+  <!-- ── Main ── -->
+  <main class="main">
+
+    <!-- Hero -->
+    <div class="hero">
+      <span class="hero-eyebrow">Documentação técnica</span>
+      <h1>Arquitetura do Projeto</h1>
+      <p class="hero-desc">
+        Como o Illusion of Dawn está organizado — pastas, arquivos, cenas, entidades e sistemas.
+        Escrito para qualquer pessoa, independente de experiência com programação.
+      </p>
+      <div class="pills" style="margin-top:1.2rem">
+        <span class="pill accent">Phaser 3</span>
+        <span class="pill accent">TypeScript</span>
+        <span class="pill">Vite 5</span>
+        <span class="pill">Electron</span>
+        <span class="pill gold">Tiled Map Editor</span>
+        <span class="pill teal">Web Audio API</span>
+      </div>
+    </div>
+
+    <!-- Visão geral -->
+    <section id="visao-geral">
+      <span class="section-eyebrow">01 — O que é</span>
+      <h2>Visão Geral</h2>
+      <p>
+        <strong style="color:var(--text-bright)">Illusion of Dawn</strong> é um RPG de ação com visão de cima,
+        estilo Zelda. Roda no navegador e também como aplicativo desktop (Windows e Mac).
+        Todo o áudio e a maioria das texturas são <em>gerados por código</em> — não há arquivos
+        de som ou imagem para os personagens e tiles base. A única exceção são os assets visuais
+        do Tiled (spritesheet e PNGs externos).
+      </p>
+      <p>
+        O mapa do mundo é editado no <strong style="color:var(--text-bright)">Tiled Map Editor</strong>
+        e sincronizado para o jogo com um único comando. Colisão, visuais decorativos e tipos de
+        terreno vivem em layers separadas dentro do mesmo arquivo.
+      </p>
+    </section>
+
+    <!-- Estrutura -->
+    <section id="estrutura">
+      <span class="section-eyebrow">02 — Organização</span>
+      <h2>Estrutura de Pastas</h2>
+
+      <div class="file-tree">
+        <span class="dir">illusionOfDawn/</span><br>
+        &nbsp;├── <span class="dir">src/</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="dim">← todo o código do jogo</span><br>
+        &nbsp;│&nbsp;&nbsp; ├── <span class="dir">scenes/</span>&nbsp;&nbsp;&nbsp;<span class="dim">← telas e fases</span><br>
+        &nbsp;│&nbsp;&nbsp; ├── <span class="dir">entities/</span>&nbsp;&nbsp;<span class="dim">← personagens, inimigos, projéteis</span><br>
+        &nbsp;│&nbsp;&nbsp; ├── <span class="dir">systems/</span>&nbsp;&nbsp;&nbsp;<span class="dim">← áudio, clima, save</span><br>
+        &nbsp;│&nbsp;&nbsp; ├── <span class="dir">utils/</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="dim">← colisão, câmera, helpers</span><br>
+        &nbsp;│&nbsp;&nbsp; ├── <span class="dir">config/</span>&nbsp;&nbsp;&nbsp;&nbsp;<span class="dim">← mapeamento de frames do tileset</span><br>
+        &nbsp;│&nbsp;&nbsp; ├── <span class="gold">constants.ts</span>&nbsp;<span class="dim">← todos os números centrais do jogo</span><br>
+        &nbsp;│&nbsp;&nbsp; └── <span class="gold">main.ts</span>&nbsp;&nbsp;&nbsp;&nbsp;<span class="dim">← ponto de entrada</span><br>
+        &nbsp;│<br>
+        &nbsp;├── <span class="dir">public/assets/</span>&nbsp;<span class="dim">← PNGs e map.json carregados pelo Phaser</span><br>
+        &nbsp;├── <span class="dir">tiled/</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="dim">← arquivos do Tiled Map Editor</span><br>
+        &nbsp;├── <span class="dir">electron/</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="dim">← código do app desktop</span><br>
+        &nbsp;├── <span class="dir">scripts/</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="dim">← ferramentas de desenvolvimento</span><br>
+        &nbsp;├── <span class="dir">docs/</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="dim">← esta documentação</span><br>
+        &nbsp;└── <span class="dim">dist/</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="dim">← jogo compilado (gerado automaticamente)</span>
+      </div>
+    </section>
+
+    <!-- Fluxo -->
+    <section id="fluxo">
+      <span class="section-eyebrow">03 — Ordem das telas</span>
+      <h2>Fluxo do Jogo</h2>
+      <p>O Phaser carrega e descarta cenas conforme necessário. A UIScene é a única que roda em paralelo.</p>
+
+      <div class="flow">
+        <div class="flow-node">
+          <div class="flow-box">BootScene</div>
+          <span class="flow-sub">carrega assets</span>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node">
+          <div class="flow-box">CharacterSelect</div>
+          <span class="flow-sub">Knight / Bard / Cleric</span>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node">
+          <div class="flow-box highlight">GameScene</div>
+          <span class="flow-sub">mundo principal</span>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node">
+          <div class="flow-box">CastleScene</div>
+          <span class="flow-sub">interior</span>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-fork">
+          <div class="flow-box gold">VictoryScene</div>
+          <div class="flow-box" style="border-color:var(--red);color:var(--red)">GameOverScene</div>
+        </div>
+      </div>
+
+      <div class="callout">
+        <strong>UIScene</strong> é especial — roda em paralelo com GameScene e CastleScene, mostrando HP,
+        cooldowns e HP do boss. Nunca acessa as outras cenas diretamente: comunica-se só via <code>registry</code>.
+      </div>
+    </section>
+
+    <!-- Entry points -->
+    <section id="entry">
+      <span class="section-eyebrow">04 — Arquivos raiz</span>
+      <h2>main.ts &amp; constants.ts</h2>
+
+      <h4>main.ts</h4>
+      <p>
+        O primeiro arquivo executado. Inicializa o Phaser com resolução 1000×800 px, pixel art ativado,
+        física arcade sem gravidade (top-down) e registra todas as cenas na ordem correta.
+        É o único lugar onde o <code>Phaser.Game</code> é criado.
+      </p>
+
+      <h4>constants.ts</h4>
+      <p>
+        Repositório central de todos os valores numéricos e configurações usados em mais de um lugar.
+        Se um número aparece em dois arquivos diferentes, ele deve estar aqui.
+      </p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Constante</th><th>Valor</th><th>O que define</th></tr></thead>
+          <tbody>
+            <tr><td>TILE_SIZE</td><td>32</td><td>Tamanho de cada tile em pixels</td></tr>
+            <tr><td>MAP_COLS / MAP_ROWS</td><td>64 / 48</td><td>Dimensões do mapa mundial</td></tr>
+            <tr><td>SOLID_TILES</td><td>Set&lt;number&gt;</td><td>Quais tipos de tile colidem — fallback quando não há layer Collision no Tiled</td></tr>
+            <tr><td>CASTLE_DOOR_WX/WY</td><td>27.5 / 26.0</td><td>Posição da porta do castelo no mundo</td></tr>
+            <tr><td>WORLD_W / WORLD_H</td><td>2048 / 1536 px</td><td>Tamanho total do mundo em pixels</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Scenes -->
+    <section id="scenes">
+      <span class="section-eyebrow">05 — Telas</span>
+      <h2>Cenas <code>src/scenes/</code></h2>
+
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-title">BootScene.ts <span class="card-lines">1292 linhas</span></div>
+          <p>Primeira cena. Não mostra nada jogável — carrega todos os PNGs externos e gera
+          <em>todas</em> as texturas procedurais do jogo via código (personagens, paredes, HUD, clima).
+          Quando termina, inicia CharacterSelectScene.</p>
+        </div>
+        <div class="card gold">
+          <div class="card-title">CharacterSelectScene.ts <span class="card-lines">483 linhas</span></div>
+          <p>Tela de seleção com três cards (Knight, Bard, Cleric). Salva a escolha no
+          <code>registry</code> e inicia GameScene.</p>
+        </div>
+        <div class="card">
+          <div class="card-title">GameScene.ts <span class="card-lines">702 linhas</span></div>
+          <p>Cena principal. Monta as três layers do mapa (Ground, Decor, Collision), cria o player,
+          spawn de 27 inimigos + boss, combate, clima, Dark Realm e transições.</p>
+        </div>
+        <div class="card teal">
+          <div class="card-title">UIScene.ts <span class="card-lines">491 linhas</span></div>
+          <p>Roda em <strong>paralelo</strong>. Exibe HUD: corações, barra de especial, HP do boss,
+          portrait. Só lê dados via <code>registry</code> — nunca acessa GameScene diretamente.</p>
+        </div>
+        <div class="card dim">
+          <div class="card-title">CastleScene.ts <span class="card-lines">230 linhas</span></div>
+          <p>Interior do castelo com mapa hardcoded (24×18 tiles). Desbloqueia o Dark Realm na
+          primeira visita. Porta de saída volta para GameScene.</p>
+        </div>
+        <div class="card dim">
+          <div class="card-title">GameOverScene.ts <span class="card-lines">95 linhas</span></div>
+          <p>Tela exibida quando o player morre. Botão para reiniciar na seleção de personagem.</p>
+        </div>
+        <div class="card dim">
+          <div class="card-title">VictoryScene.ts <span class="card-lines">102 linhas</span></div>
+          <p>Tela de vitória após derrotar o Mind Devourer. Animação e créditos.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Entities -->
+    <section id="entities">
+      <span class="section-eyebrow">06 — Objetos do jogo</span>
+      <h2>Entidades <code>src/entities/</code></h2>
+
+      <p>Personagens e inimigos herdam de classes base para compartilhar comportamentos comuns
+      (movimento, knockback, dano, morte).</p>
+
+      <h3>Personagens jogáveis</h3>
+
+      <div class="entity-tree">
+        <span class="root">BasePlayer</span><span class="attr dim">← movimento, HP, invencibilidade, flash de dano</span><br>
+        <span class="tree-dim">├──</span> <span class="leaf">Player</span><span class="attr">Knight · espada melee · HP 10 · vel 4.5</span><br>
+        <span class="tree-dim">├──</span> <span class="leaf">Bard</span><span class="attr">especial Q: burst de notas musicais · HP 7 · vel 5.5</span><br>
+        <span class="tree-dim">└──</span> <span class="leaf">Cleric</span><span class="attr">ataque à distância · especial Q: Divine Realm · HP 8 · vel 4.0</span>
+      </div>
+
+      <h3>Inimigos</h3>
+
+      <div class="entity-tree">
+        <span class="root">BaseEnemy</span><span class="attr dim">← knockback, flash vermelho, partículas na morte</span><br>
+        <span class="tree-dim">├──</span> <span class="leaf">Slime</span><span class="attr">HP 2 · wander aleatório, persegue ao detectar player</span><br>
+        <span class="tree-dim">├──</span> <span class="leaf">Skeleton</span><span class="attr">HP 4 · patrulha → alerta → charge → stun na parede</span><br>
+        <span class="tree-dim">└──</span> <span class="leaf">Wizard</span><span class="attr">HP 5 · mantém distância, strafe, teleporta após atirar</span>
+      </div>
+
+      <h3 style="margin-top:1.6rem">Boss</h3>
+      <div class="callout gold">
+        <strong>MindDevourer</strong> (340 linhas) — Aparece após matar todos os 27 inimigos.
+        <strong>Fase 1:</strong> spread de projéteis + teleporte.
+        <strong>Fase 2</strong> (50% HP): velocidade e cadência aumentadas, padrão de ataque diferente.
+      </div>
+
+      <h3>Projéteis</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Arquivo</th><th>Quem usa</th><th>O que é</th></tr></thead>
+          <tbody>
+            <tr><td>Projectile.ts</td><td>Wizard</td><td>Orbe roxo disparado pelos Wizards</td></tr>
+            <tr><td>BossProjectile.ts</td><td>MindDevourer</td><td>Orbe psíquico maior do boss</td></tr>
+            <tr><td>MagicBolt.ts</td><td>Cleric (ataque)</td><td>Raio de luz do Cleric</td></tr>
+            <tr><td>NoteProjectile.ts</td><td>Bard (especial Q)</td><td>Nota musical do Bard</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Outros</h3>
+      <p>
+        <strong style="color:var(--text-bright)">Villager.ts</strong> (131 linhas) — NPC decorativo.
+        Wander aleatório pela vila, exibe diálogo ao interagir. Não participa do combate.
+      </p>
+    </section>
+
+    <!-- Systems -->
+    <section id="systems">
+      <span class="section-eyebrow">07 — Sistemas</span>
+      <h2>Sistemas <code>src/systems/</code></h2>
+
+      <div class="card-grid">
+        <div class="card teal">
+          <div class="card-title">AudioSystem.ts <span class="card-lines">332 linhas</span></div>
+          <p>Gera todo o áudio <em>proceduralmente</em> via Web Audio API — não há arquivos de som.
+          Sintetiza efeitos (swing, hit, morte) e músicas de fundo distintas para GameScene e CastleScene.</p>
+        </div>
+        <div class="card dim">
+          <div class="card-title">SaveSystem.ts <span class="card-lines">26 linhas</span></div>
+          <p>Salva e lê dados persistentes no <code>localStorage</code> (ou disco no Electron).
+          Guarda se o Dark Realm foi desbloqueado e o personagem escolhido.</p>
+        </div>
+        <div class="card dim">
+          <div class="card-title">WeatherSystem.ts <span class="card-lines">153 linhas</span></div>
+          <p>Controla o clima do mundo: sol, chuva e neve. Tipo muda aleatoriamente com o tempo.
+          Partículas geradas proceduralmente — nenhum sprite externo.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Utils -->
+    <section id="utils">
+      <span class="section-eyebrow">08 — Utilitários</span>
+      <h2>Utilitários <code>src/utils/</code></h2>
+
+      <h4>iso.ts — Coordenadas e colisão</h4>
+      <p>O coração do sistema de movimento. Toda entidade do jogo usa essas funções.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Função</th><th>O que faz</th></tr></thead>
+          <tbody>
+            <tr><td>setCurrentMap()</td><td>Registra o mapa ativo. Toda cena chama isso no create() para que isWall() saiba onde há paredes.</td></tr>
+            <tr><td>isWall(wx, wy)</td><td>Retorna true se a posição é sólida. Usa a layer Collision do Tiled se existir; fallback para SOLID_TILES em cenas hardcoded.</td></tr>
+            <tr><td>moveSlide()</td><td>Move uma entidade com deslize suave nas paredes — se X colide mas Y não, o personagem escorrega lateralmente.</td></tr>
+            <tr><td>worldDist()</td><td>Distância entre dois pontos em coordenadas de mundo (tiles).</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout">
+        <strong>Mudar iso.ts afeta o movimento de tudo</strong> — player, inimigos, boss, projéteis.
+        Todas as entidades usam <code>moveSlide()</code> para se mover.
+      </div>
+
+      <h4>sceneHelpers.ts — Setup de cenas</h4>
+      <p>Funções repetidas em toda cena nova. Evita duplicação de código.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Função</th><th>O que faz</th></tr></thead>
+          <tbody>
+            <tr><td>createPlayer()</td><td>Lê o registry para saber qual personagem foi escolhido e instancia a classe correta (Player, Bard ou Cleric).</td></tr>
+            <tr><td>setupSceneInput()</td><td>Configura teclado (WASD, Z, X, Q, E, R, Esc) e retorna as referências de teclas.</td></tr>
+            <tr><td>setupFollowCamera()</td><td>Faz a câmera seguir o player com zoom 2.5× e limites do mundo.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4>config/TilesetGrass.ts — Frames de grama</h4>
+      <p>
+        Tabela de quais frames do <code>tileset-grass.png</code> usar para cada combinação de bordas
+        (bitmask de 4 bits = 16 variações). Usado pelo <code>GameScene.buildTileMap()</code> para
+        renderizar transições suaves entre grama e água.
+      </p>
+    </section>
+
+    <!-- Assets -->
+    <section id="assets">
+      <span class="section-eyebrow">09 — Imagens</span>
+      <h2>Assets <code>public/assets/</code></h2>
+      <p>Arquivos carregados pelo Phaser em tempo de execução. Todo o resto é gerado por código.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Arquivo</th><th>O que é</th></tr></thead>
+          <tbody>
+            <tr><td>map.json</td><td>Mapa do mundo principal. Gerado por <code>npm run sync-map</code>. Nunca editar diretamente.</td></tr>
+            <tr><td>path-objects.png</td><td>Spritesheet 512×512 do Tiled (16×16 tiles de 32 px). Usada pela layer Decor para visuais de obstáculos.</td></tr>
+            <tr><td>tileset-grass.png</td><td>Spritesheet de grama com 54 frames de transição (bordas, cantos, água).</td></tr>
+            <tr><td>tileset-map.png</td><td>Paleta de cores dos tipos de tile. Usada no Tiled para visualização — não no jogo.</td></tr>
+            <tr><td>tree.png</td><td>Sprite de árvore (pinheiro) em 8 frames.</td></tr>
+            <tr><td>bush.png</td><td>Sprite de arbusto.</td></tr>
+            <tr><td>water-foam.png</td><td>Animação de espuma de água na borda dos lagos.</td></tr>
+            <tr><td>rock1–4.png</td><td>Quatro variações de pedra decorativa.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Tiled -->
+    <section id="tiled">
+      <span class="section-eyebrow">10 — Editor de mapas</span>
+      <h2>Tiled <code>tiled/</code></h2>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Arquivo</th><th>O que é</th></tr></thead>
+          <tbody>
+            <tr><td>map.tmj</td><td>Mapa principal editável no Tiled Map Editor. <strong>Fonte da verdade</strong> — sempre editar aqui.</td></tr>
+            <tr><td>tileset-types.tsj</td><td>Define os 14 tipos de tile lógicos (grass, wall, water, etc.) com propriedades solid/walkable.</td></tr>
+            <tr><td>map.tsx</td><td>Define o tileset visual (PathAndObjects.png). Usado na layer Decor.</td></tr>
+            <tr><td>sprite.tmx</td><td>Arquivo auxiliar do Tiled para visualizar sprites isolados.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>As três layers do mapa</h3>
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-title">Ground</div>
+          <p>Tipos de terreno (grass, wall, water, path…). Define o que o jogo trata como chão
+          base. Usa só o tileset <code>tileset-types</code>.</p>
+        </div>
+        <div class="card gold">
+          <div class="card-title">Decor</div>
+          <p>Visuais decorativos de obstáculos (paredes, árvores, objetos). Usa o tileset
+          <code>map.tsx</code> / PathAndObjects.png. Puramente visual — sem colisão.</p>
+        </div>
+        <div class="card teal">
+          <div class="card-title">Collision</div>
+          <p>Define quais tiles bloqueiam o movimento. Qualquer tile pintado aqui = sólido.
+          Se esta layer não existir, o jogo usa o fallback <code>SOLID_TILES</code>.</p>
+        </div>
+      </div>
+
+      <h3>Fluxo de edição</h3>
+      <pre><span class="cmt"># 1. Editar o mapa</span>
+Abrir <span class="key">tiled/map.tmj</span> no Tiled Map Editor
+
+<span class="cmt"># 2. Sincronizar com o jogo</span>
+<span class="cmd">npm run sync-map</span>   <span class="cmt">↳ copia map.tmj → public/assets/map.json</span>
+
+<span class="cmt"># 3. Testar</span>
+<span class="cmd">npm run dev</span>        <span class="cmt">↳ abre http://localhost:3000</span></pre>
+    </section>
+
+    <!-- Electron & Scripts -->
+    <section id="electron">
+      <span class="section-eyebrow">11 — Desktop &amp; ferramentas</span>
+      <h2>Electron &amp; Scripts</h2>
+
+      <h4>electron/main.js</h4>
+      <p>
+        Processo principal do Electron. Cria a janela do app, carrega o jogo compilado (<code>dist/</code>),
+        suporta fullscreen e configura o ícone. Só é usado quando o jogo é empacotado como app —
+        no browser, este arquivo é ignorado.
+      </p>
+
+      <div class="table-wrap" style="margin-top:1rem">
+        <table>
+          <thead><tr><th>Script</th><th>Arquivo</th><th>O que faz</th></tr></thead>
+          <tbody>
+            <tr><td>export-map</td><td>scripts/export-map.mjs</td><td>Gera map.tmj e tileset-types.tsj a partir do código TypeScript. Útil para resetar o mapa ao estado original.</td></tr>
+            <tr><td>gen-icon</td><td>scripts/gen-icon.mjs</td><td>Gera o icon.ico para o instalador Windows.</td></tr>
+            <tr><td>sync-map</td><td>(package.json)</td><td>cp tiled/map.tmj public/assets/map.json</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Comandos -->
+    <section id="comandos">
+      <span class="section-eyebrow">12 — Referência rápida</span>
+      <h2>Comandos</h2>
+
+      <pre><span class="cmt"># Desenvolvimento</span>
+<span class="cmd">npm run dev</span>                   <span class="cmt">servidor local → http://localhost:3000</span>
+<span class="cmd">npm run build</span>                 <span class="cmt">compila TypeScript + Vite → dist/</span>
+<span class="cmd">npm run sync-map</span>              <span class="cmt">tiled/map.tmj → public/assets/map.json</span>
+<span class="cmd">npm run export-map</span>            <span class="cmt">regenera arquivos Tiled a partir do código</span>
+
+<span class="cmt"># Desktop</span>
+<span class="cmd">npm run electron:dev</span>          <span class="cmt">app desktop em modo desenvolvimento</span>
+<span class="cmd">npm run electron:build:mac</span>    <span class="cmt">gera instalador .dmg para Mac</span>
+<span class="cmd">npm run electron:build:win</span>    <span class="cmt">gera instalador .exe para Windows</span></pre>
+    </section>
+
+    <!-- Comunicação -->
+    <section id="comunicacao">
+      <span class="section-eyebrow">13 — Como as peças se falam</span>
+      <h2>Comunicação entre Sistemas</h2>
+
+      <div class="comms">
+        <div class="comms-box">
+          <span class="label">Tiled Map Editor</span>
+          <span class="sub">edita map.tmj</span>
+        </div>
+        <div class="comms-arrow">
+          <span class="arrow-label">sync-map</span>
+          <span class="arrow-line">→</span>
+        </div>
+        <div class="comms-box">
+          <span class="label">public/assets/map.json</span>
+          <span class="sub">Ground + Decor + Collision</span>
+        </div>
+      </div>
+
+      <div class="comms" style="margin-top:.6rem">
+        <div class="comms-box">
+          <span class="label">GameScene</span>
+          <span class="sub">playerHP, bossHP, specialReady…</span>
+        </div>
+        <div class="comms-arrow">
+          <span class="arrow-label">registry</span>
+          <span class="arrow-line">⟷</span>
+        </div>
+        <div class="comms-box">
+          <span class="label">UIScene</span>
+          <span class="sub">lê e exibe no HUD</span>
+        </div>
+      </div>
+
+      <div class="comms" style="margin-top:.6rem">
+        <div class="comms-box">
+          <span class="label">Qualquer cena</span>
+          <span class="sub">chama setCurrentMap()</span>
+        </div>
+        <div class="comms-arrow">
+          <span class="arrow-label">iso.ts</span>
+          <span class="arrow-line">→</span>
+        </div>
+        <div class="comms-box">
+          <span class="label">Todas as entidades</span>
+          <span class="sub">usam isWall() / moveSlide()</span>
+        </div>
+      </div>
+
+      <div class="callout" style="margin-top:1.2rem">
+        <strong>Regra de ouro da comunicação:</strong> UIScene nunca acessa GameScene diretamente.
+        GameScene nunca acessa UIScene diretamente. O <code>registry</code> é o canal exclusivo entre elas.
+        Isso permite trocar uma sem quebrar a outra.
+      </div>
+    </section>
+
+    <!-- Regras -->
+    <section id="regras">
+      <span class="section-eyebrow">14 — Convenções</span>
+      <h2>Regras de Ouro</h2>
+
+      <div class="rules-grid">
+        <div class="rule-card">
+          <span class="rule-number">01</span>
+          <p><strong>Texturas procedurais ficam em BootScene.ts.</strong> Todo <code>generateTexture()</code> vai lá — nunca em GameScene ou EntityScene.</p>
+        </div>
+        <div class="rule-card">
+          <span class="rule-number">02</span>
+          <p><strong>Números mágicos ficam em constants.ts.</strong> Nada de <code>32</code> ou <code>4.5</code> espalhado pelo código.</p>
+        </div>
+        <div class="rule-card">
+          <span class="rule-number">03</span>
+          <p><strong>UIScene nunca acessa GameScene.</strong> Comunicação exclusivamente via <code>registry</code>.</p>
+        </div>
+        <div class="rule-card">
+          <span class="rule-number">04</span>
+          <p><strong>Colisão vem da layer Collision do Tiled.</strong> Se não existir, usa <code>SOLID_TILES</code> como fallback (cenas hardcoded como o castelo).</p>
+        </div>
+        <div class="rule-card">
+          <span class="rule-number">05</span>
+          <p><strong>Visuais de obstáculos vêm da layer Decor.</strong> O <code>buildTileMap()</code> só renderiza o chão base — paredes e árvores são do Tiled.</p>
+        </div>
+        <div class="rule-card">
+          <span class="rule-number">06</span>
+          <p><strong>Nunca editar map.json diretamente.</strong> Sempre editar <code>tiled/map.tmj</code> e rodar <code>npm run sync-map</code>.</p>
+        </div>
+        <div class="rule-card">
+          <span class="rule-number">07</span>
+          <p><strong>Toda cena chama setCurrentMap().</strong> Esquecer isso causa colisão do mapa anterior na cena nova.</p>
+        </div>
+        <div class="rule-card">
+          <span class="rule-number">08</span>
+          <p><strong>Todo movimento usa moveSlide().</strong> Mudar essa função afeta player, inimigos e boss ao mesmo tempo.</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+  // Highlight active nav link on scroll
+  const links = document.querySelectorAll('.nav-link');
+  const sections = document.querySelectorAll('section[id]');
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'));
+        const active = document.querySelector(`.nav-link[href="#${entry.target.id}"]`);
+        if (active) active.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+
+  sections.forEach(s => observer.observe(s));
+</script>

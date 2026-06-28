@@ -4,6 +4,9 @@ import { worldDist, setCurrentMap } from '../utils/iso';
 import type { BasePlayer } from '../entities/BasePlayer';
 import { createPlayer, setupSceneInput, setupFollowCamera } from '../utils/sceneHelpers';
 import { getAudio } from '../systems/AudioSystem';
+import { saveGame } from '../systems/SaveSystem';
+
+type TileRef = { img: Phaser.GameObjects.Image; lightTex: string; darkTex: string };
 
 // ── Interior map (24 cols × 18 rows) ──────────────────────────────────────
 // Tile types: 1=wall  7=dungeon-floor  13=exit-door
@@ -50,10 +53,12 @@ export class CastleScene extends Phaser.Scene {
   private interactKey!: Phaser.Input.Keyboard.Key;
   private exitPrompt!: Phaser.GameObjects.Text;
   private padInteractPrev = false;
+  private tileRefs: TileRef[] = [];
 
   constructor() { super({ key: 'CastleScene' }); }
 
   create(): void {
+    this.tileRefs = [];
     setCurrentMap(INTERIOR_MAP, INTERIOR_COLS, INTERIOR_ROWS);
     getAudio(this)?.playMusic('castle');
 
@@ -92,18 +97,23 @@ export class CastleScene extends Phaser.Scene {
 
     this.cameras.main.fadeIn(400);
 
-    // Dark realm overlay when entering castle in the true reality
-    if (this.registry.get('darkRealm') === true) {
-      this.add.rectangle(INTERIOR_W / 2, INTERIOR_H / 2, INTERIOR_W, INTERIOR_H, 0x0a0008, 0.55)
-        .setDepth(50).setScrollFactor(0);
-      this.add.text(INTERIOR_W / 2, 40, '✦ REALIDADE VERDADEIRA ✦', {
-        fontSize: '9px', color: '#9944bb', fontFamily: 'monospace'
-      }).setOrigin(0.5).setDepth(201).setScrollFactor(0);
+    // Apply dark realm tiles immediately if active
+    const dark = this.registry.get('darkRealm') === true;
+    if (dark) {
+      for (const ref of this.tileRefs) ref.img.setTexture(ref.darkTex);
     }
+
+    // Listen for realm toggle while inside
+    this.registry.events.on('changedata', (_parent: unknown, key: string, value: unknown) => {
+      if (key !== 'darkRealm') return;
+      for (const ref of this.tileRefs)
+        ref.img.setTexture(value === true ? ref.darkTex : ref.lightTex);
+    });
 
     // Unlock parallel universe on first castle entry
     if (!this.registry.get('realmUnlocked')) {
       this.registry.set('realmUnlocked', true);
+      saveGame({ realmUnlocked: true });
       this.time.delayedCall(800, () => this.showRevelationHint());
     }
   }
@@ -160,7 +170,12 @@ export class CastleScene extends Phaser.Scene {
         if (type === 1)  topTex = 'tile-wall';
         if (type === 13) topTex = 'tile-castle-door';
 
-        if (topTex) this.add.image(x, y, topTex).setOrigin(0, 0).setDepth(row + 0.1);
+        if (topTex) {
+          const img = this.add.image(x, y, topTex).setOrigin(0, 0).setDepth(row + 0.1);
+          if (topTex === 'tile-wall') {
+            this.tileRefs.push({ img, lightTex: 'tile-wall', darkTex: 'tile-wall-dark' });
+          }
+        }
       }
     }
 

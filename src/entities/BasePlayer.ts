@@ -226,9 +226,10 @@ export abstract class BasePlayer {
     }
 
     if ((dx !== 0 || dy !== 0) && !this._attacking) {
-      this.sprite.setAngle(Math.sin(this.scene.time.now * 0.014) * 3);
+      this.sprite.setAngle(Math.sin(this.scene.time.now * 0.014) * 3).setScale(1, 1);
     } else if (!this._attacking) {
-      this.sprite.setAngle(0);
+      const idleBob = 1 + Math.sin(this.scene.time.now * 0.003) * 0.025;
+      this.sprite.setAngle(0).setScale(1, idleBob);
     }
   }
 
@@ -278,11 +279,13 @@ export abstract class BasePlayer {
     this.scene.registry.set('playerMaxHP', this.maxHp);
     this.scene.registry.set('playerDefending', this._defending);
     this.scene.registry.set('playerAttacking', this._attacking);
+    this.scene.registry.set('playerWX', this.worldX);
+    this.scene.registry.set('playerWY', this.worldY);
   }
 
   private onDie(): void {
     getAudio(this.scene)?.playEffect('playerDie');
     this.scene.cameras.main.fade(800, 0, 0, 0);
-    this.scene.time.delayedCall(900, () => this.scene.scene.restart());
+    this.scene.time.delayedCall(900, () => this.scene.scene.start('GameOverScene'));
   }
 }

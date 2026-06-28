@@ -10,6 +10,8 @@ export class UIScene extends Phaser.Scene {
   private specialReady!: Phaser.GameObjects.Text;
   private realmOverlay!: Phaser.GameObjects.Rectangle;
   private realmActiveText!: Phaser.GameObjects.Text;
+  private furyOverlay!: Phaser.GameObjects.Rectangle;
+  private furyText!: Phaser.GameObjects.Text;
   private darkVignette!: Phaser.GameObjects.Rectangle;
   private darkBanner!: Phaser.GameObjects.Text;
   private darkBannerTimer: ReturnType<typeof setTimeout> | null = null;
@@ -20,44 +22,92 @@ export class UIScene extends Phaser.Scene {
   private bossAnnounce!: Phaser.GameObjects.Text;
   private bossBarLeft = 0;
 
+  // Portrait HUD
+  private portraitImg!: Phaser.GameObjects.Image;
+  private hpBarGfx!: Phaser.GameObjects.Graphics;
+
+  // Pause
+  private pauseOverlay!: Phaser.GameObjects.Rectangle;
+  private pauseText!: Phaser.GameObjects.Text;
+  private pauseKey!: Phaser.Input.Keyboard.Key;
+  private padStartPrev = false;
+
+  // Kills counter
+  private killsTxt!: Phaser.GameObjects.Text;
+
+  // Mini-map
+  private mapGfx!: Phaser.GameObjects.Graphics;
+  private readonly MAP_DISPLAY_W = 100;
+  private readonly MAP_DISPLAY_H = 76;
+
   constructor() { super({ key: 'UIScene' }); }
 
   create(): void {
-    // Heart row — pre-allocate for max Knight HP (10)
+    // Keep heart objects for legacy compat — hidden, replaced by bar HUD
     for (let i = 0; i < 10; i++) {
       const heart = this.add.image(16 + i * 22, 16, 'heart-full')
-        .setScrollFactor(0)
-        .setDepth(100)
-        .setScale(1.4);
+        .setScrollFactor(0).setDepth(100).setScale(1.4).setVisible(false);
       this.hearts.push(heart);
     }
 
-    // Status labels
-    this.defendText = this.add.text(8, 36, '🛡 DEFENDENDO', {
+    // ── Portrait + HP/SP bar HUD (top-left) ──────────────────────────
+    const hudChar  = this.registry.get('selectedChar') as string ?? 'knight';
+    const portKey  = hudChar === 'bard' ? 'portrait-bard'
+      : hudChar === 'cleric' ? 'portrait-cleric' : 'portrait-knight';
+    const accentCol = hudChar === 'knight' ? 0xff8833
+      : hudChar === 'bard' ? 0xffdd44 : 0xaaddff;
+
+    // Dark panel background
+    const hudBg = this.add.graphics().setScrollFactor(0).setDepth(98);
+    hudBg.fillStyle(0x000000, 0.62);
+    hudBg.fillRect(6, 6, 228, 58);
+    hudBg.lineStyle(1, accentCol, 0.22);
+    hudBg.strokeRect(7, 7, 226, 56);
+
+    // Portrait image — center at (32, 35)
+    this.portraitImg = this.add.image(32, 35, portKey).setScrollFactor(0).setDepth(101);
+    // Circular crop mask
+    const pMask = this.make.graphics({});
+    pMask.fillStyle(0xffffff);
+    pMask.fillCircle(32, 35, 22);
+    this.portraitImg.setMask(pMask.createGeometryMask());
+    // Border ring
+    const portBorder = this.add.graphics().setScrollFactor(0).setDepth(102);
+    portBorder.lineStyle(3, accentCol, 1);
+    portBorder.strokeCircle(32, 35, 23);
+    portBorder.lineStyle(1, 0x000000, 0.45);
+    portBorder.strokeCircle(32, 35, 26);
+
+    // HP bar (content drawn in syncHp)
+    this.hpBarGfx = this.add.graphics().setScrollFactor(0).setDepth(100);
+
+    // Status labels (below HUD panel)
+    this.defendText = this.add.text(8, 70, '🛡 DEFENDENDO', {
       fontSize: '11px', color: '#44ddff',
       fontFamily: 'monospace', stroke: '#003355', strokeThickness: 3
     }).setScrollFactor(0).setDepth(100).setVisible(false);
 
-    this.attackText = this.add.text(8, 36, '⚔ ATACANDO', {
+    this.attackText = this.add.text(8, 70, '⚔ ATACANDO', {
       fontSize: '11px', color: '#ffdd44',
       fontFamily: 'monospace', stroke: '#553300', strokeThickness: 3
     }).setScrollFactor(0).setDepth(100).setVisible(false);
 
-    // Special bar (Bard / Cleric — hidden by default)
+    // Special bar (Knight / Bard / Cleric — hidden by default)
     const selectedChar = this.registry.get('selectedChar') as string;
     const isCleric = selectedChar === 'cleric';
-    const labelText  = isCleric ? 'Q REINO'   : 'Q ESPECIAL';
-    const readyText  = isCleric ? '⚡ Q PRONTO!' : '✦ Q PRONTO!';
-    const readyColor = isCleric ? '#aaddff'    : '#ffdd44';
-    const readyStroke = isCleric ? '#001133'   : '#332200';
+    const isKnight = selectedChar === 'knight';
+    const labelText  = isKnight ? 'Q FURIA' : isCleric ? 'Q REINO' : 'Q ESPECIAL';
+    const readyText  = isKnight ? '⚔ FURIA!' : isCleric ? '⚡ Q PRONTO!' : '✦ Q PRONTO!';
+    const readyColor = isKnight ? '#ff8833' : isCleric ? '#aaddff' : '#ffdd44';
+    const readyStroke = isKnight ? '#331100' : isCleric ? '#001133' : '#332200';
 
-    this.specialLabel = this.add.text(8, 52, labelText, {
-      fontSize: '9px', color: isCleric ? '#aaddff' : '#ffdd44', fontFamily: 'monospace'
+    this.specialLabel = this.add.text(62, 43, labelText, {
+      fontSize: '9px', color: isKnight ? '#ff8833' : isCleric ? '#aaddff' : '#ffdd44', fontFamily: 'monospace'
     }).setScrollFactor(0).setDepth(100).setVisible(false);
 
     this.specialBar = this.add.graphics().setScrollFactor(0).setDepth(100);
 
-    this.specialReady = this.add.text(8, 52, readyText, {
+    this.specialReady = this.add.text(62, 31, readyText, {
       fontSize: '10px', color: readyColor,
       fontFamily: 'monospace', stroke: readyStroke, strokeThickness: 3
     }).setScrollFactor(0).setDepth(100).setVisible(false);
@@ -81,6 +131,20 @@ export class UIScene extends Phaser.Scene {
     // Cleric realm overlay (full-screen purple tint, depth below UI)
     this.realmOverlay = this.add.rectangle(this.scale.width / 2, this.scale.height / 2, this.scale.width, this.scale.height, 0x6600cc)
       .setScrollFactor(0).setDepth(94).setAlpha(0);
+
+    // Knight Fúria overlay (orange vignette + text, depth 94)
+    this.furyOverlay = this.add.rectangle(this.scale.width / 2, this.scale.height / 2, this.scale.width, this.scale.height, 0x220800)
+      .setScrollFactor(0).setDepth(94).setAlpha(0);
+
+    this.furyText = this.add.text(this.scale.width / 2, this.scale.height / 2 - 20, '✦ FÚRIA ✦', {
+      fontSize: '22px', color: '#ff6600',
+      fontFamily: 'monospace', stroke: '#330000', strokeThickness: 5
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(101).setVisible(false);
+
+    this.tweens.add({
+      targets: this.furyText,
+      alpha: { from: 1, to: 0.25 }, duration: 260, yoyo: true, repeat: -1
+    });
 
     // Realm active label (center screen)
     this.realmActiveText = this.add.text(this.scale.width / 2, this.scale.height / 2 - 20, '✦ REINO DIVINO ✦', {
@@ -127,19 +191,98 @@ export class UIScene extends Phaser.Scene {
       fontFamily: 'monospace', stroke: '#1a0033', strokeThickness: 5
     }).setOrigin(0.5).setScrollFactor(0).setDepth(102).setAlpha(0).setVisible(false);
 
+    // ── Mini-map ──────────────────────────────────────────────────────
+    const mx = this.scale.width - this.MAP_DISPLAY_W - 8, my = 8;
+    this.add.rectangle(mx + this.MAP_DISPLAY_W / 2, my + this.MAP_DISPLAY_H / 2,
+      this.MAP_DISPLAY_W, this.MAP_DISPLAY_H, 0x000000, 0.55)
+      .setScrollFactor(0).setDepth(98);
+    const mapBorder = this.add.graphics().setScrollFactor(0).setDepth(98);
+    mapBorder.lineStyle(1, 0x553388, 0.8);
+    mapBorder.strokeRect(mx, my, this.MAP_DISPLAY_W, this.MAP_DISPLAY_H);
+    this.mapGfx = this.add.graphics().setScrollFactor(0).setDepth(99);
+
+    // ── Kills counter ─────────────────────────────────────────────────
+    this.killsTxt = this.add.text(mx, my + this.MAP_DISPLAY_H + 4, '0 / 27', {
+      fontSize: '9px', color: '#888899', fontFamily: 'monospace',
+    }).setScrollFactor(0).setDepth(100);
+
+    // ── Pause overlay (above everything, depth 210) ───────────────────
+    this.pauseOverlay = this.add.rectangle(this.scale.width / 2, this.scale.height / 2,
+      this.scale.width, this.scale.height, 0x000000, 0)
+      .setScrollFactor(0).setDepth(210);
+
+    this.pauseText = this.add.text(this.scale.width / 2, this.scale.height / 2 - 16,
+      'PAUSADO\n[ P / Start ]  Continuar', {
+        fontSize: '22px', color: '#ffffff',
+        fontFamily: 'monospace', stroke: '#000000', strokeThickness: 4,
+        align: 'center',
+      }
+    ).setOrigin(0.5).setScrollFactor(0).setDepth(211).setVisible(false);
+
+    this.pauseKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.P);
+
     // Listen to registry changes
     this.registry.events.on('changedata', this.onRegistryChange, this);
     const maxHp = this.registry.get('playerMaxHP') as number ?? 10;
     this.syncHp(maxHp, maxHp);
 
     const char = this.registry.get('selectedChar') as string;
-    const hasSpecial = char === 'bard' || char === 'cleric';
+    const hasSpecial = char === 'knight' || char === 'bard' || char === 'cleric';
     this.specialLabel.setVisible(hasSpecial);
     this.specialBar.setVisible(hasSpecial);
     this.specialReady.setVisible(false);
   }
 
-  private onRegistryChange(parent: unknown, key: string, value: unknown): void {
+  update(): void {
+    this.drawMiniMap();
+
+    // Resume from pause (UIScene stays active while GameScene is paused)
+    const pad = (this.input.gamepad as Phaser.Input.Gamepad.GamepadPlugin)?.getPad(0);
+    const startDown = pad?.buttons[9]?.pressed === true;
+    const startJust = startDown && !this.padStartPrev;
+    this.padStartPrev = startDown;
+
+    if (this.registry.get('gamePaused') && (Phaser.Input.Keyboard.JustDown(this.pauseKey) || startJust)) {
+      this.registry.set('gamePaused', false);
+      this.pauseOverlay.setAlpha(0);
+      this.pauseText.setVisible(false);
+      this.scene.resume('GameScene');
+    }
+  }
+
+  private drawMiniMap(): void {
+    const mx = this.scale.width - this.MAP_DISPLAY_W - 8, my = 8;
+    const scx = this.MAP_DISPLAY_W / 64;
+    const scy = this.MAP_DISPLAY_H / 48;
+    const wx = this.registry.get('playerWX') as number ?? 30;
+    const wy = this.registry.get('playerWY') as number ?? 30;
+
+    this.mapGfx.clear();
+    // Player dot
+    this.mapGfx.fillStyle(0xffffff, 1);
+    this.mapGfx.fillCircle(mx + wx * scx, my + wy * scy, 2.5);
+    // Boss dot
+    if (this.registry.get('bossActive')) {
+      this.mapGfx.fillStyle(0xff44ff, 0.9);
+      // Boss spawns roughly center-map
+      const bx = this.registry.get('playerWX') as number ?? 32;
+      const by = this.registry.get('playerWY') as number ?? 32;
+      this.mapGfx.fillCircle(mx + bx * scx, my + by * scy + 12, 3);
+    }
+  }
+
+  private onRegistryChange(_parent: unknown, key: string, value: unknown): void {
+    if (key === 'gamePaused') {
+      const paused = value === true;
+      this.tweens.killTweensOf(this.pauseOverlay);
+      this.tweens.add({ targets: this.pauseOverlay, alpha: paused ? 0.65 : 0, duration: 200 });
+      this.pauseText.setVisible(paused);
+    }
+    if (key === 'kills') {
+      const max = this.registry.get('killsMax') as number ?? 27;
+      this.killsTxt.setText(`${value as number} / ${max}`);
+      if ((value as number) >= max) this.killsTxt.setColor('#ffdd44');
+    }
     if (key === 'playerHP' || key === 'playerMaxHP') {
       const hp = this.registry.get('playerHP') as number ?? 6;
       const max = this.registry.get('playerMaxHP') as number ?? 6;
@@ -155,9 +298,10 @@ export class UIScene extends Phaser.Scene {
     }
     if (key === 'specialReady') {
       const char = this.registry.get('selectedChar') as string;
-      const hasSpecial = char === 'bard' || char === 'cleric';
+      const hasSpecial = char === 'knight' || char === 'bard' || char === 'cleric';
       const inRealm = this.registry.get('clericRealm') as boolean;
-      if (hasSpecial && !inRealm) {
+      const inFury  = this.registry.get('furyActive') as boolean;
+      if (hasSpecial && !inRealm && !inFury) {
         this.specialReady.setVisible(value === true);
         this.specialLabel.setVisible(!value);
         this.specialBar.setVisible(!value);
@@ -165,19 +309,35 @@ export class UIScene extends Phaser.Scene {
     }
     if (key === 'specialFrac') {
       const char = this.registry.get('selectedChar') as string;
-      const hasSpecial = char === 'bard' || char === 'cleric';
-      const ready = this.registry.get('specialReady') as boolean;
+      const hasSpecial = char === 'knight' || char === 'bard' || char === 'cleric';
+      const ready   = this.registry.get('specialReady') as boolean;
       const inRealm = this.registry.get('clericRealm') as boolean;
+      const inFury  = this.registry.get('furyActive') as boolean;
       const isCleric = char === 'cleric';
-      if (hasSpecial && !ready && !inRealm) {
+      const isKnight = char === 'knight';
+      if (hasSpecial && !ready && !inRealm && !inFury) {
         const frac = value as number;
-        const trackColor  = isCleric ? 0x001133 : 0x332200;
-        const fillColor   = isCleric ? 0x4488ff : 0xffdd44;
-        const borderColor = isCleric ? 0x0055aa : 0xffaa00;
+        const trackColor  = isKnight ? 0x331100 : isCleric ? 0x001133 : 0x332200;
+        const fillColor   = isKnight ? 0xff6600 : isCleric ? 0x4488ff : 0xffdd44;
+        const borderColor = isKnight ? 0xff3300 : isCleric ? 0x0055aa : 0xffaa00;
         this.specialBar.clear();
-        this.specialBar.fillStyle(trackColor, 0.8);   this.specialBar.fillRect(8, 63, 100, 8);
-        this.specialBar.fillStyle(fillColor, 1);       this.specialBar.fillRect(8, 63, Math.floor(frac * 100), 8);
-        this.specialBar.lineStyle(1, borderColor, 0.8); this.specialBar.strokeRect(8, 63, 100, 8);
+        this.specialBar.fillStyle(trackColor, 0.8);    this.specialBar.fillRect(62, 31, 160, 9);
+        this.specialBar.fillStyle(fillColor, 1);        this.specialBar.fillRect(62, 31, Math.floor(frac * 160), 9);
+        this.specialBar.lineStyle(1, borderColor, 0.8); this.specialBar.strokeRect(62, 31, 160, 9);
+      }
+    }
+    if (key === 'furyActive') {
+      const entering = value === true;
+      this.tweens.killTweensOf(this.furyOverlay);
+      this.tweens.add({ targets: this.furyOverlay, alpha: entering ? 0.22 : 0, duration: entering ? 180 : 400 });
+      this.furyText.setVisible(entering);
+      if (entering) {
+        this.specialReady.setVisible(false);
+        this.specialLabel.setVisible(false);
+        this.specialBar.setVisible(false);
+      } else {
+        this.specialLabel.setVisible(true);
+        this.specialBar.setVisible(true);
       }
     }
     if (key === 'bossAnnouncing') {
@@ -287,21 +447,45 @@ export class UIScene extends Phaser.Scene {
   }
 
   private syncHp(hp: number, max: number): void {
-    for (let i = 0; i < this.hearts.length; i++) {
-      this.hearts[i].setTexture(i < hp ? 'heart-full' : 'heart-empty');
-      // Pulse on low HP
-      if (i < hp && hp <= 2) {
-        this.tweens.add({
-          targets: this.hearts[i],
-          scaleX: 1.6, scaleY: 1.6,
-          duration: 300, yoyo: true,
-          repeat: 0
-        });
-      }
+    const BX = 62, BY = 14, BW = 160, BH = 13;
+    const frac = max > 0 ? Math.max(0, Math.min(1, hp / max)) : 0;
+    const fillW = Math.floor(frac * BW);
+
+    const fillColor  = hp <= 2 ? 0xff2222 : hp <= Math.ceil(max * 0.4) ? 0xdd4422 : 0xcc2222;
+    const shineColor = hp <= 2 ? 0xff7766 : 0xff5555;
+
+    this.hpBarGfx.clear();
+    // Track
+    this.hpBarGfx.fillStyle(0x1a0000, 0.9);
+    this.hpBarGfx.fillRect(BX, BY, BW, BH);
+    // Fill
+    if (fillW > 0) {
+      this.hpBarGfx.fillStyle(fillColor, 1);
+      this.hpBarGfx.fillRect(BX, BY, fillW, BH);
+      // Shine stripe
+      this.hpBarGfx.fillStyle(shineColor, 0.35);
+      this.hpBarGfx.fillRect(BX, BY, fillW, 3);
     }
-    // Show/hide extra hearts
-    for (let i = 0; i < this.hearts.length; i++) {
-      this.hearts[i].setVisible(i < max);
+    // Segment marks (every 2 HP)
+    this.hpBarGfx.lineStyle(1, 0x660000, 0.5);
+    for (let i = 1; i < max; i += 2) {
+      const sx = BX + Math.floor(BW * i / max);
+      this.hpBarGfx.lineBetween(sx, BY, sx, BY + BH);
+    }
+    // Border
+    this.hpBarGfx.lineStyle(1, 0x880000, 0.9);
+    this.hpBarGfx.strokeRect(BX, BY, BW, BH);
+
+    // HP numeric label
+    this.hpBarGfx.fillStyle(0xffffff, 0); // no-op; text handled separately below
+
+    // Pulse portrait on low HP
+    if (hp <= 2 && hp > 0) {
+      this.tweens.killTweensOf(this.portraitImg);
+      this.tweens.add({
+        targets: this.portraitImg,
+        alpha: { from: 1, to: 0.5 }, duration: 280, yoyo: true, repeat: 0
+      });
     }
   }
 }

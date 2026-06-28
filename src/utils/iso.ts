@@ -4,12 +4,16 @@ interface MapConfig {
   data: number[][];
   cols: number;
   rows: number;
+  collision?: number[][];
 }
 
 let cfg: MapConfig = { data: MAP_DATA, cols: MAP_COLS, rows: MAP_ROWS };
 
-export function setCurrentMap(data: number[][], cols: number, rows: number): void {
-  cfg = { data, cols, rows };
+export function setCurrentMap(
+  data: number[][], cols: number, rows: number,
+  collision?: number[][]
+): void {
+  cfg = { data, cols, rows, collision };
 }
 
 export function isoX(wx: number, _wy: number): number { return wx * TILE_SIZE; }
@@ -20,6 +24,7 @@ export function isWall(wx: number, wy: number): boolean {
   const col = Math.floor(wx);
   const row = Math.floor(wy);
   if (col < 0 || col >= cfg.cols || row < 0 || row >= cfg.rows) return true;
+  if (cfg.collision) return cfg.collision[row][col] !== 0;
   return SOLID_TILES.has(cfg.data[row][col]);
 }
 

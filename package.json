@@ -15,7 +15,10 @@
     "electron:build:win": "npm run build && electron-builder --win --x64",
     "electron:build:mac": "npm run build && electron-builder --mac",
     "electron:build:linux": "npm run build && electron-builder --linux",
-    "gen-icon": "node scripts/gen-icon.mjs"
+    "gen-icon": "node scripts/gen-icon.mjs",
+    "sync-map": "cp tiled/map.tmj public/assets/map.json",
+    "gen-heavenbrock": "node scripts/gen-heavenbrock.mjs",
+    "sync-heavenbrock": "cp tiled/heavenbrock.tmj public/assets/heavenbrock.json"
   },
   "devDependencies": {
     "phaser": "^3.88.2",

@@ -7,6 +7,17 @@ import { isoX, isoY, moveSlide } from '../utils/iso';
 
 type VState = 'happy' | 'desperate' | 'aggro';
 
+const HAPPY_LINES = [
+  'Que dia lindo em Heavenbrook!',
+  'O castelo sempre foi assim... não foi?',
+  'Nunca me sinto mal aqui. É estranho.',
+  'Às vezes sonho com um céu diferente...',
+  'Os guardas do castelo parecem distantes hoje.',
+  'Você é novo por aqui? Sinta-se em casa!',
+  'Há algo de errado com essa névoa...',
+  'Boa sorte na sua jornada, aventureiro!',
+];
+
 export class Villager extends Phaser.GameObjects.Sprite {
   worldX: number;
   worldY: number;
@@ -27,21 +38,26 @@ export class Villager extends Phaser.GameObjects.Sprite {
     this.setOrigin(0.5, 0.9).setDepth(wy);
   }
 
-  setRealm(dark: boolean): void {
+  setRealm(dark: boolean, forceAggro = false): void {
     if (!dark) {
       this.vstate = 'happy';
       this.hp    = VILLAGER_HP;
       this.setTexture('npc-happy').clearTint();
     } else {
-      const aggro = Math.random() < 0.30;
+      const aggro = forceAggro || Math.random() < 0.30;
       this.vstate = aggro ? 'aggro' : 'desperate';
       this.setTexture(aggro ? 'npc-aggro' : 'npc-desperate');
       if (!aggro) this.setTint(0xaaaacc);
     }
   }
 
-  isAggro(): boolean  { return this.vstate === 'aggro'; }
-  isAlive(): boolean  { return this.active && this.hp > 0; }
+  isAggro():  boolean { return this.vstate === 'aggro'; }
+  isHappy():  boolean { return this.vstate === 'happy'; }
+  isAlive():  boolean { return this.active && this.hp > 0; }
+
+  getDialogueLine(): string {
+    return HAPPY_LINES[Math.floor(Math.random() * HAPPY_LINES.length)];
+  }
 
   takeDamage(dmg: number): void {
     if (!this.active) return;

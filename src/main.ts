@@ -1,14 +1,17 @@
 import Phaser from 'phaser';
 import { BootScene } from './scenes/BootScene';
 import { CharacterSelectScene } from './scenes/CharacterSelectScene';
+import { HeavenbrockScene } from './scenes/HeavenbrockScene';
 import { GameScene } from './scenes/GameScene';
 import { UIScene } from './scenes/UIScene';
 import { CastleScene } from './scenes/CastleScene';
+import { GameOverScene } from './scenes/GameOverScene';
+import { VictoryScene } from './scenes/VictoryScene';
 
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
   parent: 'game-container',
-  backgroundColor: '#2ec0c0',
+  backgroundColor: '#050812',
   pixelArt: true,
   scale: {
     mode: Phaser.Scale.EXPAND,
@@ -22,7 +25,7 @@ const config: Phaser.Types.Core.GameConfig = {
     default: 'arcade',
     arcade: { debug: false, gravity: { x: 0, y: 0 } }
   },
-  scene: [BootScene, CharacterSelectScene, GameScene, UIScene, CastleScene]
+  scene: [BootScene, CharacterSelectScene, HeavenbrockScene, GameScene, UIScene, CastleScene, GameOverScene, VictoryScene]
 };
 
 new Phaser.Game(config);

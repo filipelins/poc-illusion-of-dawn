@@ -164,22 +164,35 @@ export const MAP_DATA: number[][] = generateMap();
 export const WORLD_W = MAP_COLS * TILE_SIZE;  // 2048
 export const WORLD_H = MAP_ROWS * TILE_SIZE;  // 1536
 
+// ── Heavenbrock Village ─────────────────────────────────────────────
+export const HB_COLS = 48;
+export const HB_ROWS = 36;
+export const HB_WORLD_W = HB_COLS * TILE_SIZE;  // 1536
+export const HB_WORLD_H = HB_ROWS * TILE_SIZE;  // 1152
+export const HB_PLAYER_SPAWN_WX = 23.5;  // central square, south of Tavern
+export const HB_PLAYER_SPAWN_WY = 13.0;
+
 // ── Castle overworld gate position ─────────────────────────────────────
 export const CASTLE_DOOR_WX = 27.5;
 export const CASTLE_DOOR_WY = 26.0;
 
-// ── Player ─────────────────────────────────────────────────────────
-export const PLAYER_SPEED         = 4.5;
-export const PLAYER_DEFEND_SPEED  = 2.0;
+// ── Player (Guerreiro / Knight) ────────────────────────────────────
+export const PLAYER_SPEED         = 5.0;
+export const PLAYER_DEFEND_SPEED  = 2.2;
 export const PLAYER_MAX_HP        = 10;
-export const PLAYER_ATTACK_DAMAGE = 2;
-export const PLAYER_SWORD_REACH   = 1.1;
+export const PLAYER_ATTACK_DAMAGE = 3;
+export const PLAYER_SWORD_REACH   = 1.2;
 export const PLAYER_SWORD_WIDTH   = 3;
-export const PLAYER_SWORD_DUR     = 220;
-export const PLAYER_SWORD_CD      = 460;
+export const PLAYER_SWORD_DUR     = 200;
+export const PLAYER_SWORD_CD      = 380;
 export const PLAYER_INVINCIBILITY = 1100;
 export const PLAYER_KNOCKBACK     = 4.0;
 export const PLAYER_RADIUS        = 0.38;
+
+// ── Knight — Fúria ─────────────────────────────────────────────────
+export const KNIGHT_FURY_DUR      = 5000;   // 5 s de duração
+export const KNIGHT_FURY_CD       = 15000;  // 15 s de cooldown (após fim da fúria)
+export const KNIGHT_FURY_DMG_MULT = 3;      // ×3 dano durante a fúria
 
 // ── Slime ──────────────────────────────────────────────────────────
 export const SLIME_HP              = 2;
